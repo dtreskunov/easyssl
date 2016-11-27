@@ -36,8 +36,19 @@ openssl genrsa -out ca-key.pem 2048
 openssl req -x509 -new -nodes -key ca-key.pem -days 3650 -sha256 -out ca-cert.pem -subj '/CN=EasySSL CA'
 
 # Create Certificate Revocation List (CRL)
-# Publish crl.pem to a publically accessible URL
 openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -out crl.pem
+# It is recommended to publish crl.pem to a publically accessible URL
+```
+
+If you need to revoke access for an app, its certificate may be revoked. Here's how:
+```bash
+# This adds a line to index.txt with the serial number of the revoked cert
+openssl ca -revoke app-cert.pem -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem
+
+# Next, rerun the -gencrl command to update the CRL
+openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -out crl.pem
+
+# Next, distribute the updated CRL to the interested parties (or publish it to the web)
 ```
 
 ### 2. Setting up an application
