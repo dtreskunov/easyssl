@@ -1,0 +1,5 @@
+easyssl:
+  caCertificate: file:src/test/resources/ssl/ca/cert.pem
+  certificate: file:src/test/resources/ssl/localhost1/cert.pem
+  key: file:src/test/resources/ssl/localhost1/key.pem
+  certificateRevocationList: file:src/test/resources/ssl/ca/crl.pem
