@@ -6,5 +6,6 @@ jdk:
 # don't run `gradle assemble` https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install: true
 
-# don't use the `gradlew` wrapper, and provide some necessary project properties
-script: gradle check -PsonatypeUsername= -PsonatypePassword=
+cache:
+  directories:
+  - $HOME/.gradle
