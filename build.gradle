@@ -1,107 +1,108 @@
-buildscript {
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.2.RELEASE")
-    }
-    repositories {
-        mavenCentral()
-    }
+plugins {
+  id 'java'
+  id 'maven'
+  id 'signing'
+  id 'org.springframework.boot' version '1.4.2.RELEASE'
 }
 
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'signing'
-apply plugin: 'org.springframework.boot'
-
 group = 'com.github.dtreskunov'
-version = '0.1.0'
+
+ext {
+  isReleaseVersion = (version ==~ /\d+\.\d+\.\d+/)
+  publishUrl = (isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2/' : 'file:build/.m2')
+  publishUserName = project.findProperty('publishUsername') ?: ''
+  publishPassword = project.findProperty('publishPassword') ?: ''
+}
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-    compile('org.springframework.boot:spring-boot')
-    compile('org.springframework.boot:spring-boot-autoconfigure')
-    compile('org.springframework:spring-web')
-    compile('org.slf4j:slf4j-api')
-    compile('org.apache.httpcomponents:httpcore')
-    compile('javax.validation:validation-api:1.1.0.Final')
-    compile('javax.servlet:javax.servlet-api')
-    
-    testCompile('org.springframework.boot:spring-boot-starter-web')
-    testCompile('org.springframework.boot:spring-boot-starter-security')
-    testCompile('junit:junit')
-    testCompile('org.springframework.boot:spring-boot-starter-test')
-    testCompile('org.springframework.security:spring-security-test')
-    testCompile('org.apache.httpcomponents:httpclient')
+  compile('org.springframework.boot:spring-boot')
+  compile('org.springframework.boot:spring-boot-autoconfigure')
+  compile('org.springframework:spring-web')
+  compile('org.slf4j:slf4j-api')
+  compile('org.apache.httpcomponents:httpcore')
+  compile('javax.validation:validation-api:1.1.0.Final')
+  compile('javax.servlet:javax.servlet-api')
+  
+  testCompile('org.springframework.boot:spring-boot-starter-web')
+  testCompile('org.springframework.boot:spring-boot-starter-security')
+  testCompile('junit:junit')
+  testCompile('org.springframework.boot:spring-boot-starter-test')
+  testCompile('org.springframework.security:spring-security-test')
+  testCompile('org.apache.httpcomponents:httpclient')
 }
 
 bootRepackage {
-    enabled = false
+  enabled = false
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from 'build/docs/javadoc'
+  classifier = 'javadoc'
+  from 'build/docs/javadoc'
 }
 
 task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-    classifier = 'sources'
+  from sourceSets.main.allSource
+  classifier = 'sources'
 }
 
 artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
+  archives jar
+  archives javadocJar
+  archives sourcesJar
 }
 
 signing {
-    sign configurations.archives
+  required { isReleaseVersion && gradle.taskGraph.hasTask('uploadArchives') }
+  sign configurations.archives
 }
 
 uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+  repositories {
+    mavenDeployer {
+      if (isReleaseVersion) {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      }
+      repository(url: publishUrl) {
+        authentication(
+          userName: publishUserName,
+          password: publishPassword
+        )
+      }
+  
+      pom.project {
+         name 'EasySSL for Spring Boot microservices'
+         packaging 'jar'
+         description 'EasySSL is a small library to help create Spring Boot microservices that talk to each other over HTTPS with mutual authentication'
+         url 'https://github.com/dtreskunov/easyssl'
  
-            repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
-                authentication(
-                    userName: project.findProperty('sonatypeUsername') ?: '',
-                    password: project.findProperty('sonatypePassword') ?: ''
-                )
-            }
+         scm {
+           url 'scm:git@github.com:dtreskunov/easyssl.git'
+           connection 'scm:git@github.com:dtreskunov/easyssl.git'
+           developerConnection 'scm:git@github.com:dtreskunov/easyssl.git'
+         }
  
-            pom.project {
-               name 'EasySSL for Spring Boot microservices'
-               packaging 'jar'
-               description 'EasySSL is a small library to help create Spring Boot microservices that talk to each other over HTTPS with mutual authentication'
-               url 'https://github.com/dtreskunov/easyssl'
- 
-               scm {
-                   url 'scm:git@github.com:dtreskunov/easyssl.git'
-                   connection 'scm:git@github.com:dtreskunov/easyssl.git'
-                   developerConnection 'scm:git@github.com:dtreskunov/easyssl.git'
-               }
- 
-               licenses {
-                   license {
-                       name 'The Apache Software License, Version 2.0'
-                       url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                       distribution 'repo'
-                   }
-               }
- 
-               developers {
-                   developer {
-                       id 'dtreskunov'
-                       name 'Denis Treskunov'
-                   }
-               }
+         licenses {
+           license {
+             name 'The Apache Software License, Version 2.0'
+             url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+             distribution 'repo'
            }
-        }
+         }
+ 
+         developers {
+           developer {
+             id 'dtreskunov'
+             name 'Denis Treskunov'
+           }
+         }
+       }
     }
+  }
 }
