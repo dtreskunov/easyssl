@@ -101,18 +101,18 @@ easyssl:
 ```
 
 Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Look at the
-[server code](https://github.com/dtreskunov/easyssl/tree/master/src/test/java/name/treskunov/denis/easyssl/server)
+[server code](https://github.com/dtreskunov/easyssl/tree/master/src/test/java/com/github/dtreskunov/easyssl/server)
 used by this project's integration tests.
 
 This should be enough to configure Tomcat/Jetty/etc to use SSL with client auth, but you still need to
 implement business rules for securing access. Look at the
-[Spring Security code](https://github.com/dtreskunov/easyssl/blob/master/src/test/java/name/treskunov/denis/easyssl/server/Security.java)
+[Spring Security code](https://github.com/dtreskunov/easyssl/blob/master/src/test/java/com/github/dtreskunov/easyssl/server/Security.java)
 in this project's integration tests and the links below.
 
 An app doesn't have to be a server. If your app needs to securely call another app using its certificate to
 authenticate itself, you can use the `SSLContext` bean to set up the client (e.g. RestTemplate on top of
 Apache HttpClient). Look at the
-[client code](https://github.com/dtreskunov/easyssl/blob/master/src/test/java/name/treskunov/denis/easyssl/IntegrationTestUsingRealServer.java)
+[client code](https://github.com/dtreskunov/easyssl/blob/master/src/test/java/com/github/dtreskunov/easyssl/IntegrationTestUsingRealServer.java)
 used by this project's integration tests.
 
 # Testing with cURL
