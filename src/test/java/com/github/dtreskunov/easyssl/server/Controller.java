@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl.server;
+package com.github.dtreskunov.easyssl.server;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;

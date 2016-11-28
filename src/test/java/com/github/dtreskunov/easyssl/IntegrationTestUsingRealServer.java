@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl;
+package com.github.dtreskunov.easyssl;
 
 import javax.net.ssl.SSLContext;
 
@@ -25,9 +25,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import name.treskunov.denis.easyssl.server.Server;
-import name.treskunov.denis.easyssl.spring.EasySslBeans;
-import name.treskunov.denis.easyssl.spring.EasySslProperties;
+import com.github.dtreskunov.easyssl.server.Server;
+import com.github.dtreskunov.easyssl.spring.EasySslBeans;
+import com.github.dtreskunov.easyssl.spring.EasySslProperties;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class}, webEnvironment = WebEnvironment.RANDOM_PORT)

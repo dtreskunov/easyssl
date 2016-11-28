@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl;
+package com.github.dtreskunov.easyssl;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import name.treskunov.denis.easyssl.server.Server;
+import com.github.dtreskunov.easyssl.server.Server;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class})

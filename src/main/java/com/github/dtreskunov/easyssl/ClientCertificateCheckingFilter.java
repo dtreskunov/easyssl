@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl;
+package com.github.dtreskunov.easyssl;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;

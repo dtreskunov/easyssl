@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl;
+package com.github.dtreskunov.easyssl;
 
 import java.security.PublicKey;
 import java.security.cert.CRLReason;

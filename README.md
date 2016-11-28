@@ -73,7 +73,7 @@ First, you must add `easyssl` to your Spring Boot project.
 Maven:
 ```xml
 <dependency>
-  <groupId>name.treskunov.denis<groupId>
+  <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
   <version>0.1.0</version>
 </dependency>
@@ -81,7 +81,7 @@ Maven:
 
 Gradle:
 ```groovy
-compile('name.treskunov.denis:easyssl:0.1.0')
+compile('com.github.dtreskunov:easyssl:0.1.0')
 ```
 
 Next, add the following section to `application.yml`:
@@ -96,7 +96,7 @@ easyssl:
 # There is no need to specify `server.ssl.` properties - they will be overridden by EasySSL
 ```
 
-Next, ensure that the  `name.treskunov.denis.easyssl` package is getting scanned by Spring. Look at the
+Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Look at the
 [server code](https://github.com/dtreskunov/easyssl/tree/master/src/test/java/name/treskunov/denis/easyssl/server)
 used by this project's integration tests.
 

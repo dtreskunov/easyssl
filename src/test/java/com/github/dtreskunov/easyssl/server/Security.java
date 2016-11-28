@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl.server;
+package com.github.dtreskunov.easyssl.server;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

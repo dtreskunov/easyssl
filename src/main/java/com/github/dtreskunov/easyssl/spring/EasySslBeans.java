@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl.spring;
+package com.github.dtreskunov.easyssl.spring;
 
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -33,8 +33,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 
-import name.treskunov.denis.easyssl.CRLTrustManager;
-import name.treskunov.denis.easyssl.ClientCertificateCheckingFilter;
+import com.github.dtreskunov.easyssl.CRLTrustManager;
+import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
+
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 

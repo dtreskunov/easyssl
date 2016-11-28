@@ -1,4 +1,4 @@
-package name.treskunov.denis.easyssl.spring;
+package com.github.dtreskunov.easyssl.spring;
 
 import javax.validation.constraints.NotNull;
 
