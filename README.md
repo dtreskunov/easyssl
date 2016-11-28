@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/dtreskunov/easyssl.svg?branch=master)](https://travis-ci.org/dtreskunov/easyssl)
 # EasySSL
 EasySSL is a small library to help create Spring Boot applications that talk to each other over HTTPS
 with mutual, or two-way authentication. There is a central Certificate Authority (CA). Each app has its own
