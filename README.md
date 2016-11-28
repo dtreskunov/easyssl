@@ -14,6 +14,10 @@ Mutual authentication using client certificates provides:
 * *integrity* - prevents replay
 * *authenticity* - prevents impersonation
 
+There is a lot of information on the internet on how to set it up. Perhaps too much information. There are different ways to store
+keys and certificates (JKS, PKCS1, PKCS8, PKCS12, PEM, DER, ad nauseam). Just look at the links below. EasySSL relies on plain
+`openssl` tools, PEM encodings, and unencrypted private keys to make SSL easy.
+
 ## Usage
 
 ### 1. Setting up a Certificate Authority
@@ -119,3 +123,4 @@ curl --cacert ca-cert.pem --cert client-cert.pem --key client-key.pem -i https:/
 
 # Links
 * [X.509 Authentication in Spring Security](http://www.baeldung.com/x-509-authentication-in-spring-security)
+* [Java 2-way TLS/SSL](http://blog.palominolabs.com/2011/10/18/java-2-way-tlsssl-client-certificates-and-pkcs12-vs-jks-keystores/)
