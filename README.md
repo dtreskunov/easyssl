@@ -15,9 +15,11 @@ Mutual authentication using client certificates provides:
 * *integrity* - prevents replay
 * *authenticity* - prevents impersonation
 
-There is a lot of information on the internet on how to set it up. Perhaps too much information. There are different ways to store
-keys and certificates (JKS, PKCS1, PKCS8, PKCS12, PEM, DER, ad nauseam). Just look at the links below. EasySSL relies on plain
-`openssl` tools, PEM encodings, and unencrypted private keys to make SSL easy.
+EasySSL relies on plain
+`openssl` tools and PEM encodings to make SSL easy for Dev and for Ops.
+
+## License
+EasySSL is [licensed](https://github.com/dtreskunov/easyssl/blob/master/LICENSE) under the terms of Apache 2.0.
 
 ## Usage
 
