@@ -60,17 +60,17 @@ artifacts {
   archives sourcesJar
 }
 
-signing {
-  required { isReleaseVersion && gradle.taskGraph.hasTask('uploadArchives') }
-  sign configurations.archives
-}
+// signing {
+//   required { isReleaseVersion && gradle.taskGraph.hasTask('uploadArchives') }
+//   sign configurations.archives
+// }
 
 uploadArchives {
   repositories {
     mavenDeployer {
-      if (isReleaseVersion) {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-      }
+      // if (isReleaseVersion) {
+      //   beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      // }
       repository(url: publishUrl) {
         authentication(
           userName: publishUserName,
