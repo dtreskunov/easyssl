@@ -6,4 +6,5 @@
 /.classpath
 /gradle
 /secring.gpg
+.*.swp
 

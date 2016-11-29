@@ -1,3 +1,14 @@
+// old-style plugins that are not registered at plugins.gradle.org:
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
+  }
+}
+
+// new-style plugins that ARE registered at plugins.gradle.org:
 plugins {
   id 'java'
   id 'maven'
@@ -5,6 +16,7 @@ plugins {
   id 'org.springframework.boot' version '1.4.2.RELEASE'
   id 'com.palantir.git-version' version '0.5.2'
 }
+apply plugin: 'io.codearte.nexus-staging'
 
 group = 'com.github.dtreskunov'
 version gitVersion() // https://github.com/palantir/gradle-git-version
@@ -112,3 +124,9 @@ uploadArchives {
     }
   }
 }
+
+// https://github.com/Codearte/gradle-nexus-staging-plugin/
+if (isReleaseVersion) {
+  uploadArchives.finalizedBy closeAndPromoteRepository
+}
+
