@@ -7,6 +7,9 @@ jdk:
 install: true
 script: ./gradlew check
 
+before_cache:
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -fr $HOME/.gradle/caches/*/scripts/
 cache:
   directories:
   - $HOME/.gradle
