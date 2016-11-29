@@ -66,6 +66,10 @@ artifacts {
 // }
 
 uploadArchives {
+  doFirst {
+    println "Will upload version '${version}' to '${publishUrl}' (isReleaseVersion=${isReleaseVersion})"
+  }
+
   repositories {
     mavenDeployer {
       // if (isReleaseVersion) {
