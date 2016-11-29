@@ -5,3 +5,5 @@
 /.settings
 /.classpath
 /gradle
+/secring.gpg
+
