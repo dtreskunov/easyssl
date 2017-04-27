@@ -2,7 +2,7 @@
 
 require 'fileutils'
 
-Entity = Struct.new(:name, :dn, :ca_name) do
+Entity = Struct.new(:name, :dn, :ca_name, :key_pass) do
   def key
     "#{name}/key.pem"
   end
@@ -43,11 +43,12 @@ EOF
     FileUtils.mkdir_p name
 
     # Create private key
-    `openssl genrsa -out #{key} 2048`
+    encrypt_opts = key_pass ? "-aes128 -passout pass:#{key_pass}" : ''
+    `openssl genrsa -out #{key} #{encrypt_opts} 2048`
 
     if ca_name
       # Create CSR
-      `openssl req -new -key #{key} -out #{csr} -subj "#{dn}"`
+      `openssl req -new -key #{key} #{key_pass ? "-passin pass:"+key_pass : ''} -out #{csr} -subj "#{dn}"`
       # Have the CA sign the CSR
       `openssl x509 -req -in #{csr} -CA #{ca_name}/cert.pem -CAkey #{ca_name}/key.pem -CAcreateserial -days 3650 -sha256 -out #{cert}`
     else
@@ -78,7 +79,7 @@ entities = {}
 [
   Entity.new('ca',              '/CN=EasySSL CA'),
   Entity.new('fake_ca',         '/CN=EasySSL Fake CA'),
-  Entity.new('localhost1',      '/OU=Localhost1/CN=localhost', 'ca'),
+  Entity.new('localhost1',      '/OU=Localhost1/CN=localhost', 'ca', 'localhost1-password'),
   Entity.new('localhost2',      '/OU=Localhost2/CN=localhost', 'ca'),
   Entity.new('fake_localhost1', '/OU=Fake Localhost1/CN=localhost', 'fake_ca'),
 ].each do |entity|

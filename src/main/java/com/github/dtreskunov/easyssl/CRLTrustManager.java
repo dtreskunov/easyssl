@@ -1,6 +1,8 @@
 package com.github.dtreskunov.easyssl;
 
+import java.security.InvalidKeyException;
 import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.CRLReason;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -8,6 +10,7 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
@@ -28,29 +31,36 @@ import org.springframework.util.Assert;
 public class CRLTrustManager implements X509TrustManager {
     private final Logger m_log = LoggerFactory.getLogger(getClass());
     private final Resource m_crlResource;
-    private final PublicKey m_publicKey;
+    private final Collection<PublicKey> m_publicKeys;
     private Optional<X509CRL> m_crl = Optional.empty();
     private long m_lastRefreshed = -1;
 
-    public CRLTrustManager(Resource crlResource, PublicKey publicKey) {
-        Assert.notNull(publicKey);
+    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys) {
+        Assert.notNull(publicKeys);
         m_crlResource = crlResource;
-        m_publicKey = publicKey;
+        m_publicKeys = publicKeys;
     }
-    
-    private static X509CRL loadCRL(Resource resource, PublicKey publicKey) throws Exception {
+
+    private static X509CRL loadCRL(Resource resource, Collection<PublicKey> publicKeys) throws Exception {
         X509CRL crl = (X509CRL) CertificateFactory.getInstance("X.509").generateCRL(resource.getInputStream());
-        crl.verify(publicKey);
-        return crl;
+        for (PublicKey publicKey: publicKeys) {
+            try {
+                crl.verify(publicKey);
+                return crl;
+            } catch (InvalidKeyException e) {
+                continue;
+            }
+        }
+        throw new SignatureException("Unable to verify CRL against any provided public keys");
     }
-    
+
     private synchronized Optional<X509CRL> getCRL() throws Exception {
         if (m_crlResource == null || !m_crlResource.exists()) {
             return Optional.empty();
         }
         long lastModified = m_crlResource.lastModified();
         if (!m_crl.isPresent() || lastModified > m_lastRefreshed) {
-            m_crl = Optional.of(loadCRL(m_crlResource, m_publicKey));
+            m_crl = Optional.of(loadCRL(m_crlResource, m_publicKeys));
             m_lastRefreshed = lastModified;
             m_log.info("Loaded CRL from {}", m_crlResource);
         }
@@ -71,7 +81,7 @@ public class CRLTrustManager implements X509TrustManager {
     public X509Certificate[] getAcceptedIssuers() {
         return null;
     }
-    
+
     private void check(X509Certificate[] chain) throws CertificateException {
         if (chain == null || chain.length == 0) {
             return;

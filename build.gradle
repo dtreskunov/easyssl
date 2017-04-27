@@ -43,7 +43,7 @@ dependencies {
   compile('org.apache.httpcomponents:httpcore')
   compile('javax.validation:validation-api:1.1.0.Final')
   compile('javax.servlet:javax.servlet-api')
-  
+  compile('org.bouncycastle:bcpkix-jdk15on:1.56')
   testCompile('org.springframework.boot:spring-boot-starter-web')
   testCompile('org.springframework.boot:spring-boot-starter-security')
   testCompile('junit:junit')
@@ -93,19 +93,19 @@ uploadArchives {
           password: publishPassword
         )
       }
-  
+
       pom.project {
          name 'EasySSL for Spring Boot microservices'
          packaging 'jar'
          description 'EasySSL is a small library to help create Spring Boot microservices that talk to each other over HTTPS with mutual authentication'
          url 'https://github.com/dtreskunov/easyssl'
- 
+
          scm {
            url 'scm:git@github.com:dtreskunov/easyssl.git'
            connection 'scm:git@github.com:dtreskunov/easyssl.git'
            developerConnection 'scm:git@github.com:dtreskunov/easyssl.git'
          }
- 
+
          licenses {
            license {
              name 'The Apache Software License, Version 2.0'
@@ -113,7 +113,7 @@ uploadArchives {
              distribution 'repo'
            }
          }
- 
+
          developers {
            developer {
              id 'dtreskunov'

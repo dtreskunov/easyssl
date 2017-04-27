@@ -1,5 +1,7 @@
 package com.github.dtreskunov.easyssl;
 
+import java.util.Arrays;
+
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.client.HttpClient;
@@ -32,25 +34,25 @@ import com.github.dtreskunov.easyssl.spring.EasySslProperties;
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class}, webEnvironment = WebEnvironment.RANDOM_PORT)
 public class IntegrationTestUsingRealServer {
-    
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Autowired
     @LocalServerPort
     private int port;
-    
+
     @Autowired
     SSLContext sslContext;
-    
+
     private RestTemplate restTemplate;
-    
+
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
         return new RestTemplateBuilder().rootUri("https://localhost:" + port).requestFactory(requestFactory).build();
     }
-    
+
     @Before
     public void setup() throws Exception {
         restTemplate = getRestTemplate(sslContext);
@@ -61,29 +63,29 @@ public class IntegrationTestUsingRealServer {
         ResponseEntity<String> response = restTemplate.getForEntity("/whoami", String.class);
         Assert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
     }
-    
+
     @Test
     public void serverRejectsRevokedClient() throws Exception {
         EasySslProperties revokedClientProperties = new EasySslProperties();
-        revokedClientProperties.setCaCertificate(new ClassPathResource("/ssl/ca/cert.pem"));
+        revokedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
         revokedClientProperties.setCertificate(new ClassPathResource("/ssl/localhost2/cert.pem"));
         revokedClientProperties.setKey(new ClassPathResource("/ssl/localhost2/key.pem"));
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
-        
+
         thrown.expect(HttpClientErrorException.class);
         thrown.expectMessage("403");
-        
+
         revokedClientRestTemplate.getForEntity("/", String.class);
     }
 
     @Test
     public void serverRejectsUntrustedClient() throws Exception {
         EasySslProperties untrustedClientProperties = new EasySslProperties();
-        untrustedClientProperties.setCaCertificate(new ClassPathResource("/ssl/ca/cert.pem"));
+        untrustedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
         untrustedClientProperties.setCertificate(new ClassPathResource("/ssl/fake_localhost1/cert.pem"));
         untrustedClientProperties.setKey(new ClassPathResource("/ssl/fake_localhost1/key.pem"));
         RestTemplate untrustedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedClientProperties));
-        
+
         // This appears to work since we have ClientAuth.WANT (not ClientAuth.NEED) and the "/" endpoint is not protected
         //
         // But curl doesn't work:
@@ -93,20 +95,21 @@ public class IntegrationTestUsingRealServer {
 
         thrown.expect(HttpClientErrorException.class);
         thrown.expectMessage("403");
-        
+
         untrustedClientRestTemplate.getForEntity("/whoami", String.class);
     }
 
     @Test
     public void clientRejectsUntrustedServer() throws Exception {
         EasySslProperties untrustedServerProperties = new EasySslProperties();
-        untrustedServerProperties.setCaCertificate(new ClassPathResource("/ssl/fake_ca/cert.pem"));
+        untrustedServerProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/fake_ca/cert.pem")));
         untrustedServerProperties.setCertificate(new ClassPathResource("/ssl/localhost1/cert.pem"));
         untrustedServerProperties.setKey(new ClassPathResource("/ssl/localhost1/key.pem"));
+        untrustedServerProperties.setKeyPassword("localhost1-password");
         RestTemplate revokedRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedServerProperties));
-        
+
         thrown.expect(ResourceAccessException.class);
-        
+
         revokedRestTemplate.getForEntity("/", String.class);
     }
 }

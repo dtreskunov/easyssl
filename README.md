@@ -36,24 +36,28 @@ default_md = default
 default_crl_days = 30
 ^D
 
-# Create private key
-openssl genrsa -out ca-key.pem 2048
+cat > ca-pass.txt
+SomeSecurePassword
+^D
+
+# Create private key (make a note of the password)
+openssl genrsa -out ca-key.pem -aes128 -passout file:ca-pass.txt 2048
 
 # Create CA certificate
-openssl req -x509 -new -nodes -key ca-key.pem -days 3650 -sha256 -out ca-cert.pem -subj '/CN=EasySSL CA'
+openssl req -x509 -new -nodes -key ca-key.pem -passin file:ca-pass.txt -days 3650 -sha256 -out ca-cert.pem -subj '/CN=EasySSL CA'
 
 # Create Certificate Revocation List (CRL)
-openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -out crl.pem
+openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -passin file:ca-pass.txt -out crl.pem
 # It is recommended to publish crl.pem to a publically accessible URL
 ```
 
 If you need to revoke access for an app, its certificate may be revoked. Here's how:
 ```bash
 # This adds a line to index.txt with the serial number of the revoked cert
-openssl ca -revoke app-cert.pem -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem
+openssl ca -revoke app-cert.pem -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -passin file:ca-pass.txt
 
 # Next, rerun the -gencrl command to update the CRL
-openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -out crl.pem
+openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -passin file:ca-pass.txt -out crl.pem
 
 # Next, distribute the updated CRL to the interested parties (or publish it to the web)
 ```
@@ -61,17 +65,21 @@ openssl ca -gencrl -config openssl.cnf -cert ca-cert.pem -keyfile ca-key.pem -ou
 ### 2. Setting up an application
 These steps should be done by the application owner.
 ```bash
+cat > app-pass.txt
+AnotherSecurePassword
+^D
+
 # Create private key
-openssl genrsa -out app-key.pem 2048
+openssl genrsa -out app-key.pem -aes128 -passin file:app-pass.txt 2048
 
 # Create Certificate Signing Request (CSR)
 # It's a good idea (although not required) to provide the app's correct DNS name
-openssl req -new -key app-key.pem -out app-csr.pem -subj '/OU=App name/CN=<app.dns.name>'
+openssl req -new -key app-key.pem -passin file:app-pass.txt -out app-csr.pem -subj '/OU=App name/CN=<app.dns.name>'
 
 # Sign the CSR
 # This should be done by your Ops people - give them app-csr.pem from previous step, and ask them to sign it
 # using the CA's private key
-openssl x509 -req -in app-csr.pem -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -days 3650 -sha256 -out app-cert.pem
+openssl x509 -req -in app-csr.pem -CA ca-cert.pem -CAkey ca-key.pem -passin file:ca-pass.txt -CAcreateserial -days 3650 -sha256 -out app-cert.pem
 ```
 
 ### 3. Using the library
@@ -82,25 +90,29 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.1.0')
+compile('com.github.dtreskunov:easyssl:0.2.0')
 ```
 
 Next, add the following section to `application.yml`:
 ```yml
 easyssl:
   # HTTP URL should work here, as well!
-  caCertificate: file:/path/to/ca-cert.pem
+  caCertificate: file:/path/to/ca-cert.pem # also supports arrays
   certificate: file:/path/to/app-cert.pem
   key: file:/path/to/app-key.pem
+  keyPassword: AnotherSecurePassword
   certificateRevocationList: file:/path/to/crl.pem
   
 # There is no need to specify `server.ssl.` properties - they will be overridden by EasySSL
+#
+# These settings (including keyPassword) may be specified via any of Boot's Externalized Configuration mechanisms.
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html
 ```
 
 Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Look at the
