@@ -4,7 +4,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
+    classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.8.0"
   }
 }
 
@@ -13,7 +13,7 @@ plugins {
   id 'java'
   id 'maven'
   id 'signing'
-  id 'org.springframework.boot' version '1.4.2.RELEASE'
+  id 'org.springframework.boot' version '1.5.3.RELEASE'
   id 'com.palantir.git-version' version '0.5.2'
 }
 apply plugin: 'io.codearte.nexus-staging'
@@ -127,6 +127,6 @@ uploadArchives {
 
 // https://github.com/Codearte/gradle-nexus-staging-plugin/
 if (isReleaseVersion) {
-  uploadArchives.finalizedBy closeAndPromoteRepository
+  uploadArchives.finalizedBy closeAndReleaseRepository
 }
 
