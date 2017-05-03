@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class Controller {
-    
+
     @RequestMapping("/")
     public String index(@AuthenticationPrincipal UserDetails user) {
         String name = user == null ? "stranger" : user.getUsername();

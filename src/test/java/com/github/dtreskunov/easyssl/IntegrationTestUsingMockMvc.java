@@ -17,7 +17,7 @@ import com.github.dtreskunov.easyssl.server.Server;
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class})
 @AutoConfigureMockMvc
 public class IntegrationTestUsingMockMvc {
-    
+
     @Autowired
     private MockMvc mvc;
 

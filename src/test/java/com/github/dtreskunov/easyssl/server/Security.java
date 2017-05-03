@@ -21,7 +21,7 @@ public class Security extends WebSecurityConfigurerAdapter {
         http.x509()
             .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
-    
+
     @Override
     @Bean
     public UserDetailsService userDetailsService() {
