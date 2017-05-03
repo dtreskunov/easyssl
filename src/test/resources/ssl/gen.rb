@@ -2,7 +2,7 @@
 
 require 'fileutils'
 
-Entity = Struct.new(:name, :dn, :ca_name, :key_pass) do
+Entity = Struct.new(:name, :dn, :ca_name, :key_pass, :key_pkcs8) do
   def key
     "#{name}/key.pem"
   end
@@ -43,8 +43,15 @@ EOF
     FileUtils.mkdir_p name
 
     # Create private key
-    encrypt_opts = key_pass ? "-aes128 -passout pass:#{key_pass}" : ''
-    `openssl genrsa -out #{key} #{encrypt_opts} 2048`
+    if key_pkcs8
+      `openssl genrsa 2048 | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
+    else
+      if key_pass
+        `openssl genrsa -out #{key} -aes128 -passout pass:#{key_pass} 2048`
+      else
+        `openssl genrsa -out #{key} 2048`
+      end
+    end
 
     if ca_name
       # Create CSR
@@ -80,7 +87,7 @@ entities = {}
   Entity.new('ca',              '/CN=EasySSL CA'),
   Entity.new('fake_ca',         '/CN=EasySSL Fake CA'),
   Entity.new('localhost1',      '/OU=Localhost1/CN=localhost', 'ca', 'localhost1-password'),
-  Entity.new('localhost2',      '/OU=Localhost2/CN=localhost', 'ca'),
+  Entity.new('localhost2',      '/OU=Localhost2/CN=localhost', 'ca', 'localhost2-password', true),
   Entity.new('fake_localhost1', '/OU=Fake Localhost1/CN=localhost', 'fake_ca'),
 ].each do |entity|
   entity.gen

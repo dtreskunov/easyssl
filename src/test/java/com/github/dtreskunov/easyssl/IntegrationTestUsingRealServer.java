@@ -70,6 +70,7 @@ public class IntegrationTestUsingRealServer {
         revokedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
         revokedClientProperties.setCertificate(new ClassPathResource("/ssl/localhost2/cert.pem"));
         revokedClientProperties.setKey(new ClassPathResource("/ssl/localhost2/key.pem"));
+        revokedClientProperties.setKeyPassword("localhost2-password");
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
 
         thrown.expect(HttpClientErrorException.class);

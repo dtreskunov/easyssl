@@ -22,11 +22,17 @@ import javax.servlet.Filter;
 
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
@@ -36,6 +42,7 @@ import org.springframework.boot.context.embedded.SslStoreProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.github.dtreskunov.easyssl.CRLTrustManager;
@@ -44,13 +51,22 @@ import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
  * <ol>
- * <li>{@link #clientSSLContext} - may be used to configure an SSL-using {@link RestTemplate}</li>
- * <li>{@link #clientCertificateCheckingFilter} - checks that client's certificate has not been revoked</li>
- * <li>{@link #servletContainerCustomizer} - used by Spring Boot to configure Jetty/Tomcat/Undertow to use SSL with client cert auth</li>
+ * <li>{@link #easySslContext} - may be used to configure an SSL-using {@link RestTemplate}</li>
+ * <li>{@link #easySslClientCertificateCheckingFilter} - checks that client's certificate has not been revoked</li>
+ * <li>{@link #easySslServletContainerCustomizer} - used by Spring Boot to configure Jetty/Tomcat/Undertow to use SSL with client cert auth</li>
  * </ol>
  */
 @Configuration
+@EasySslBeans.ConditionalOnEnabled
 public class EasySslBeans {
+
+    @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
+    public static @interface ConditionalOnEnabled {}
+
+    @ConditionalOnEnabled
+    @ConditionalOnWebApplication
+    @ConditionalOnProperty(value = "easyssl.serverCustomizationEnabled", matchIfMissing = true)
+    public static @interface ConditionalOnServerCustomizationEnabled {}
 
     static {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
@@ -100,9 +116,14 @@ public class EasySslBeans {
         final PEMKeyPair pemKeyPair;
         final KeyPair keyPair;
         if (pemObject instanceof PEMEncryptedKeyPair) {
-            pemKeyPair = ((PEMEncryptedKeyPair)pemObject).decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(keyPassword.toCharArray()));
+            PEMDecryptorProvider decryptor = new JcePEMDecryptorProviderBuilder().build(keyPassword.toCharArray());
+            pemKeyPair = ((PEMEncryptedKeyPair)pemObject).decryptKeyPair(decryptor);
         } else if (pemObject instanceof PEMKeyPair) {
             pemKeyPair = (PEMKeyPair) pemObject;
+        } else if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
+            InputDecryptorProvider decryptor = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPassword.toCharArray());
+            PrivateKeyInfo privateKeyInfo = ((PKCS8EncryptedPrivateKeyInfo)pemObject).decryptPrivateKeyInfo(decryptor);
+            return converter.getPrivateKey(privateKeyInfo);
         } else {
             throw new GeneralSecurityException("Private key is expected to be either a PEMEncryptedKeyPair or a PEMKeyPair, but is actually a " + pemObject.getClass().getSimpleName());
         }
@@ -133,20 +154,25 @@ public class EasySslBeans {
         return trustStore;
     }
 
+    @Component
+    @ConditionalOnEnabled
+    public static class Properties extends EasySslProperties {}
+
     @Bean
-    public SSLContext clientSSLContext(EasySslProperties config) throws Exception {
+    @ConditionalOnEnabled
+    public SSLContext easySslContext(EasySslProperties config) throws Exception {
         return getSSLContext(config);
     }
 
     @Bean
-    @ConditionalOnWebApplication
-    public Filter clientCertificateCheckingFilter(EasySslProperties config) throws Exception {
+    @ConditionalOnServerCustomizationEnabled
+    public Filter easySslClientCertificateCheckingFilter(EasySslProperties config) throws Exception {
         return new ClientCertificateCheckingFilter(getTrustManager(config));
     }
 
     @Bean
-    @ConditionalOnWebApplication
-    public EmbeddedServletContainerCustomizer servletContainerCustomizer(EasySslProperties config) throws Exception {
+    @ConditionalOnServerCustomizationEnabled
+    public EmbeddedServletContainerCustomizer easySslServletContainerCustomizer(EasySslProperties config) throws Exception {
         final SslStoreProvider storeProvider = getSslStoreProvider(config);
         final Ssl sslProperties = getSslProperties(config);
 

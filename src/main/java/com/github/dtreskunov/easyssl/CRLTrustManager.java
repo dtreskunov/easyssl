@@ -36,7 +36,7 @@ public class CRLTrustManager implements X509TrustManager {
     private long m_lastRefreshed = -1;
 
     public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys) {
-        Assert.notNull(publicKeys);
+        Assert.notNull(publicKeys, "publicKeys may not be null");
         m_crlResource = crlResource;
         m_publicKeys = publicKeys;
     }
