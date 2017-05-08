@@ -15,6 +15,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -73,7 +74,7 @@ public class EasySslBeans {
     }
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
-    private static final String KEY_PASSWORD = "password";
+    private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
     private static final String KEY_ALIAS = "easyssl-key";
 
     public static SSLContext getSSLContext(EasySslProperties config) throws Exception {
