@@ -5,18 +5,21 @@ with mutual, or two-way authentication. There is a central Certificate Authority
 private key, and a certificate signed by the CA. The certificate is used to secure HTTP connections, both
 made by the app (to another app), and those served by the app.
 
-This library was a weekend project motivated by the need to move an existing constellation of HTTP services
-from the intranet to the internet. Existing services were using a hodge-podge of authentication schemes,
-including service accounts IP whitelisting, and load-balancer rules. Mutual SSL authentication can be used
-to solve this problem.
+This library was motivated by the need to move an existing constellation of HTTP services from the intranet to the
+Internet. Existing services were using a hodge-podge of authentication schemes, including service accounts IP
+whitelisting, and load-balancer rules. Mutual SSL authentication can be used to solve this problem.
 
 Mutual authentication using client certificates provides:
 * *confidentiality* - prevents eavesdropping
 * *integrity* - prevents replay
 * *authenticity* - prevents impersonation
 
-EasySSL relies on plain
-`openssl` tools and PEM encodings to make SSL easy for Dev and for Ops.
+EasySSL relies on plain `openssl` tools and PEM encodings to make SSL easy for Dev and for Ops.
+
+## Differences From Spring Boot
+1. Uses PEM-encoded certificates and key files (rather than Java-specific [JKS](http://docs.oracle.com/javase/8/docs/technotes/tools/windows/keytool.html) files)
+2. Supports Certificate Revocation Lists (Spring Boot currently does not - see [SPRING-BOOT 6171](https://github.com/spring-projects/spring-boot/issues/6171))
+3. Creates an [SSLContext](https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLContext.html) bean to help write client code
 
 ## License
 EasySSL is [licensed](https://github.com/dtreskunov/easyssl/blob/master/LICENSE) under the terms of Apache 2.0.
@@ -108,7 +111,8 @@ easyssl:
   key: file:/path/to/app-key.pem
   keyPassword: AnotherSecurePassword
   certificateRevocationList: file:/path/to/crl.pem
-  
+  clientAuth: WANT # default is NEED
+
 # There is no need to specify `server.ssl.` properties - they will be overridden by EasySSL
 #
 # These settings (including keyPassword) may be specified via any of Boot's Externalized Configuration mechanisms.

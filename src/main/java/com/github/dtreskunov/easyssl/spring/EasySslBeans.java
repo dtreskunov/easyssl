@@ -38,7 +38,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.Ssl;
-import org.springframework.boot.context.embedded.Ssl.ClientAuth;
 import org.springframework.boot.context.embedded.SslStoreProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -206,7 +205,7 @@ public class EasySslBeans {
     private Ssl getSslProperties(EasySslProperties config) {
         Ssl properties = new Ssl();
         properties.setEnabled(true);
-        properties.setClientAuth(ClientAuth.WANT);
+        properties.setClientAuth(config.getClientAuth());
         properties.setKeyAlias(KEY_ALIAS);
         properties.setKeyPassword(KEY_PASSWORD);
         return properties;

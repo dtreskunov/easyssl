@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
+import org.springframework.boot.context.embedded.Ssl.ClientAuth;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 
@@ -42,6 +43,7 @@ public class EasySslProperties {
 
     private boolean m_enabled = true;
     private boolean m_serverCustomizationEnabled = true;
+    private ClientAuth m_clientAuth = ClientAuth.NEED;
 
     /**
      * @return Certificate Authority's (CA) certificate(s), used for validating client and server certificates, and the signature on the CRL.
@@ -91,6 +93,14 @@ public class EasySslProperties {
         return m_serverCustomizationEnabled;
     }
 
+    /**
+     * @return Whether requests made to this server should be immediately rejected if the client did not include a certificate.
+     * See {@link ClientAuth}.
+     */
+    public ClientAuth getClientAuth() {
+        return m_clientAuth;
+    }
+
     public void setCaCertificate(List<Resource> caCertificate) {
         m_caCertificate = caCertificate;
     }
@@ -111,5 +121,8 @@ public class EasySslProperties {
     }
     public void setServerCustomizationEnabled(boolean serverCustomizationEnabled) {
         m_serverCustomizationEnabled = serverCustomizationEnabled;
+    }
+    public void setClientAuth(ClientAuth clientAuth) {
+        m_clientAuth = clientAuth;
     }
 }
