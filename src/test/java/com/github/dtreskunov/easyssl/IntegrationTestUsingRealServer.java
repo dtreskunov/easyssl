@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -42,6 +43,9 @@ public class IntegrationTestUsingRealServer {
     @LocalServerPort
     private int port;
 
+    @Value("${local.server.protocol}")
+    private String protocol; // injected by EasySSL
+
     @Autowired
     SSLContext sslContext;
 
@@ -50,11 +54,12 @@ public class IntegrationTestUsingRealServer {
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        return new RestTemplateBuilder().rootUri("https://localhost:" + port).requestFactory(requestFactory).build();
+        return new RestTemplateBuilder().rootUri(protocol + "://localhost:" + port).requestFactory(requestFactory).build();
     }
 
     @Before
     public void setup() throws Exception {
+        Assert.assertEquals("https", protocol);
         restTemplate = getRestTemplate(sslContext);
     }
 

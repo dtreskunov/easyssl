@@ -93,13 +93,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.4.0</version>
+  <version>0.5.0</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.4.0')
+compile('com.github.dtreskunov:easyssl:0.5.0')
 ```
 
 Next, add the following section to `application.yml`:
@@ -133,6 +133,12 @@ authenticate itself, you can use the `SSLContext` bean to set up the client (e.g
 Apache HttpClient). Look at the
 [client code](https://github.com/dtreskunov/easyssl/blob/master/src/test/java/com/github/dtreskunov/easyssl/IntegrationTestUsingRealServer.java)
 used by this project's integration tests.
+
+Application code is able to use the `local.server.protocol` property to determine whether the servlet container was started with SSL enabled:
+```java
+@Value("${local.server.protocol}")
+private String protocol; // injected by EasySSL
+```
 
 # Testing with cURL
 ```bash

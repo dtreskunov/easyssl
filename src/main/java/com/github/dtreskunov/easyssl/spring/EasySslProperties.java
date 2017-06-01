@@ -7,6 +7,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.boot.context.embedded.Ssl.ClientAuth;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * Settings that define the application's SSL identity.
@@ -25,6 +26,7 @@ import org.springframework.core.io.Resource;
  *   # enabled: false
  * </pre>
  */
+@Validated
 @ConfigurationProperties(prefix = "easyssl")
 public class EasySslProperties {
 

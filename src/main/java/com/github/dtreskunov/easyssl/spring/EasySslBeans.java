@@ -15,6 +15,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
@@ -33,16 +35,22 @@ import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.Ssl;
 import org.springframework.boot.context.embedded.SslStoreProvider;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.github.dtreskunov.easyssl.CRLTrustManager;
@@ -54,11 +62,14 @@ import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
  * <li>{@link #easySslContext} - may be used to configure an SSL-using {@link RestTemplate}</li>
  * <li>{@link #easySslClientCertificateCheckingFilter} - checks that client's certificate has not been revoked</li>
  * <li>{@link #easySslServletContainerCustomizer} - used by Spring Boot to configure Jetty/Tomcat/Undertow to use SSL with client cert auth</li>
+ * <li>{@code local.server.protocol} - environment property injectable into managed beans using {@code @Value}</li>
  * </ol>
  */
 @Configuration
 @EasySslBeans.ConditionalOnEnabled
 public class EasySslBeans {
+
+    private static final String PROTOCOL_PROPERTY = "local.server.protocol";
 
     @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
     public static @interface ConditionalOnEnabled {}
@@ -154,9 +165,11 @@ public class EasySslBeans {
         return trustStore;
     }
 
-    @Component
+    @Bean
     @ConditionalOnEnabled
-    public static class Properties extends EasySslProperties {}
+    public EasySslProperties easySslProperties() {
+        return new EasySslProperties();
+    }
 
     @Bean
     @ConditionalOnEnabled
@@ -183,6 +196,30 @@ public class EasySslBeans {
                 container.setSsl(sslProperties);
             }
         };
+    }
+
+    @Autowired
+    public void setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
+        if (config.isEnabled() && config.isServerCustomizationEnabled()) {
+            setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
+        } else {
+            setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setEnvironmentProperty(ApplicationContext context, String propertyName, String propertyValue) {
+        if (!(context instanceof ConfigurableApplicationContext)) {
+            return;
+        }
+        ConfigurableEnvironment environment = ((ConfigurableApplicationContext) context).getEnvironment();
+        MutablePropertySources sources = environment.getPropertySources();
+        PropertySource<?> source = sources.get("easyssl");
+        if (source == null) {
+            source = new MapPropertySource("easyssl", new HashMap<String, Object>());
+            sources.addFirst(source);
+        }
+        ((Map<String, Object>) source.getSource()).put(propertyName, propertyValue);
     }
 
     private SslStoreProvider getSslStoreProvider(EasySslProperties config) throws Exception {
