@@ -200,7 +200,7 @@ public class EasySslBeans {
 
     @Autowired
     public void setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
-        if (config.isEnabled() && config.isServerCustomizationEnabled()) {
+        if (config != null && config.isEnabled() && config.isServerCustomizationEnabled()) {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
         } else {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
