@@ -20,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
  *   key:                       file:key.pem
  *   keyPassword:               secret
  *   certificateRevocationList: http://ca/crl.pem
+ *   certificateRevocationListCheckIntervalSeconds: 60
  *   # If the servlet container (if any) should NOT be configured to use SSL:
  *   # serverCustomizationEnabled: false
  *   # If auto-configuration should NOT be enabled:
@@ -36,6 +37,7 @@ public class EasySslProperties {
     @NotNull
     private Resource m_certificate;
 
+    private long m_certificateRevocationListCheckIntervalSeconds;
     private Resource m_certificateRevocationList;
 
     @NotNull
@@ -66,6 +68,13 @@ public class EasySslProperties {
      */
     public Resource getCertificateRevocationList() {
         return m_certificateRevocationList;
+    }
+
+    /**
+     * @return How often the CRL should be refreshed (defaults to "for every request")
+     */
+    public long getCertificateRevocationListCheckIntervalSeconds() {
+        return m_certificateRevocationListCheckIntervalSeconds;
     }
 
     /**
@@ -111,6 +120,9 @@ public class EasySslProperties {
     }
     public void setCertificateRevocationList(Resource certificateRevocationList) {
         m_certificateRevocationList = certificateRevocationList;
+    }
+    public void setCertificateRevocationListCheckIntervalSeconds(long certificateRevocationListCheckIntervalSeconds) {
+        m_certificateRevocationListCheckIntervalSeconds = certificateRevocationListCheckIntervalSeconds;
     }
     public void setKey(Resource key) {
         m_key = key;

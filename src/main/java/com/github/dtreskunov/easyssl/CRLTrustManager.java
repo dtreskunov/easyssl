@@ -1,5 +1,6 @@
 package com.github.dtreskunov.easyssl;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -10,6 +11,8 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -25,19 +28,24 @@ import org.springframework.util.Assert;
 /**
  * Verifies chains of {@link X509Certificate X.509 certificates} against the provided {@link X509CRL Certificate Revocation List} (CRL).
  * The CRL is specified as a Spring {@link Resource}, so it can be loaded from a remote URL. The CRL is checked for
- * {@link Resource#lastModified() last modified} timestamp and is refreshed accordingly. The signature on the CRL is verified
- * against CA's {@link PublicKey}.
+ * {@link Resource#lastModified() last modified} timestamp and is refreshed accordingly. This check is skipped if the last refresh was
+ * within {@code crlResourceCheckInterval} from now. The signature on the CRL is verified against some of provided {@link PublicKey}s
+ * (there may be several CAs).
  */
 public class CRLTrustManager implements X509TrustManager {
-    private final Logger m_log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
     private final Resource m_crlResource;
+    private final TemporalAmount m_crlResourceCheckInterval;
     private final Collection<PublicKey> m_publicKeys;
-    private Optional<X509CRL> m_crl = Optional.empty();
-    private long m_lastRefreshed = -1;
 
-    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys) {
+    private X509CRL m_crl = null;
+    private Instant m_lastLoaded = null;
+
+    public CRLTrustManager(Resource crlResource, TemporalAmount crlResourceCheckInterval, Collection<PublicKey> publicKeys) {
+        Assert.notNull(crlResourceCheckInterval, "crlResourceCheckInterval may not be null");
         Assert.notNull(publicKeys, "publicKeys may not be null");
         m_crlResource = crlResource;
+        m_crlResourceCheckInterval = crlResourceCheckInterval;
         m_publicKeys = publicKeys;
     }
 
@@ -46,6 +54,7 @@ public class CRLTrustManager implements X509TrustManager {
         for (PublicKey publicKey: publicKeys) {
             try {
                 crl.verify(publicKey);
+                LOG.info("Loaded CRL from {}", resource);
                 return crl;
             } catch (InvalidKeyException e) {
                 continue;
@@ -54,17 +63,23 @@ public class CRLTrustManager implements X509TrustManager {
         throw new SignatureException("Unable to verify CRL against any provided public keys");
     }
 
-    private synchronized Optional<X509CRL> getCRL() throws Exception {
-        if (m_crlResource == null || !m_crlResource.exists()) {
-            return Optional.empty();
+    private boolean shouldLoadCRL() throws IOException {
+        if (m_lastLoaded == null) {
+            return true;
         }
-        long lastModified = m_crlResource.lastModified();
-        if (!m_crl.isPresent() || lastModified > m_lastRefreshed) {
-            m_crl = Optional.of(loadCRL(m_crlResource, m_publicKeys));
-            m_lastRefreshed = lastModified;
-            m_log.info("Loaded CRL from {}", m_crlResource);
+        if (Instant.now().isAfter(m_lastLoaded.plus(m_crlResourceCheckInterval)) &&
+                Instant.ofEpochMilli(m_crlResource.lastModified()).isAfter(m_lastLoaded)) {
+            return true;
         }
-        return m_crl;
+        return false;
+    }
+
+    private synchronized void maybeLoadCRL() throws Exception {
+        if (!shouldLoadCRL()) {
+            return;
+        }
+        m_crl = loadCRL(m_crlResource, m_publicKeys);
+        m_lastLoaded = Instant.now();
     }
 
     @Override
@@ -83,27 +98,23 @@ public class CRLTrustManager implements X509TrustManager {
     }
 
     private void check(X509Certificate[] chain) throws CertificateException {
-        if (chain == null || chain.length == 0) {
+        if (chain == null || chain.length == 0 || m_crlResource == null) {
             return;
         }
         try {
-            m_crl = getCRL();
+            maybeLoadCRL();
         } catch (Exception e) {
-            throw new RuntimeException("Error getting CRL", e);
-        }
-        if (!m_crl.isPresent()) {
-            return;
+            throw new RuntimeException("Error loading CRL", e);
         }
         for (X509Certificate cert: chain) {
-            X509CRLEntry revocation  = m_crl.get().getRevokedCertificate(cert);
-            if (revocation == null) {
-                continue;
+            X509CRLEntry revocation  = m_crl.getRevokedCertificate(cert);
+            if (revocation != null) {
+                throw new CertificateRevokedException(
+                        Optional.ofNullable(revocation.getRevocationDate()).orElse(new Date()),
+                        Optional.ofNullable(revocation.getRevocationReason()).orElse(CRLReason.UNSPECIFIED),
+                        Optional.ofNullable(revocation.getCertificateIssuer()).orElse(m_crl.getIssuerX500Principal()),
+                        Collections.emptyMap());
             }
-            throw new CertificateRevokedException(
-                    Optional.ofNullable(revocation.getRevocationDate()).orElse(new Date()),
-                    Optional.ofNullable(revocation.getRevocationReason()).orElse(CRLReason.UNSPECIFIED),
-                    Optional.ofNullable(revocation.getCertificateIssuer()).orElse(m_crl.get().getIssuerX500Principal()),
-                    Collections.emptyMap());
         }
     }
 }

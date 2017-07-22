@@ -13,6 +13,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -147,7 +148,10 @@ public class EasySslBeans {
         for (Resource c: config.getCaCertificate()) {
             publicKeys.add(getCertificate(c).getPublicKey());
         }
-        return new CRLTrustManager(config.getCertificateRevocationList(), publicKeys);
+        return new CRLTrustManager(
+                config.getCertificateRevocationList(),
+                Duration.ofSeconds(config.getCertificateRevocationListCheckIntervalSeconds()),
+                publicKeys);
     }
 
     private static KeyStore getTrustStore(Collection<Resource> certificates) throws Exception {

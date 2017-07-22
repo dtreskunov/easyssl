@@ -93,13 +93,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.5.0')
+compile('com.github.dtreskunov:easyssl:0.6.0')
 ```
 
 Next, add the following section to `application.yml`:
@@ -111,6 +111,7 @@ easyssl:
   key: file:/path/to/app-key.pem
   keyPassword: AnotherSecurePassword
   certificateRevocationList: file:/path/to/crl.pem
+  certificateRevocationListCheckIntervalSeconds: 60 # default is 0
   clientAuth: WANT # default is NEED
 
 # There is no need to specify `server.ssl.` properties - they will be overridden by EasySSL
