@@ -39,6 +39,7 @@ import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.Ssl;
@@ -189,9 +190,9 @@ public class EasySslBeans {
 
     @Bean
     @ConditionalOnServerCustomizationEnabled
-    public EmbeddedServletContainerCustomizer easySslServletContainerCustomizer(EasySslProperties config) throws Exception {
+    public EmbeddedServletContainerCustomizer easySslServletContainerCustomizer(EasySslProperties config, @Autowired(required = false) ServerProperties serverProperties) throws Exception {
         final SslStoreProvider storeProvider = getSslStoreProvider(config);
-        final Ssl sslProperties = getSslProperties(config);
+        final Ssl sslProperties = getSslProperties(config, serverProperties);
 
         return new EmbeddedServletContainerCustomizer() {
             @Override
@@ -243,8 +244,8 @@ public class EasySslBeans {
         };
     }
 
-    private Ssl getSslProperties(EasySslProperties config) {
-        Ssl properties = new Ssl();
+    private Ssl getSslProperties(EasySslProperties config, ServerProperties serverProperties) {
+        Ssl properties = (serverProperties == null || serverProperties.getSsl() == null) ? new Ssl() : serverProperties.getSsl();
         properties.setEnabled(true);
         properties.setClientAuth(config.getClientAuth());
         properties.setKeyAlias(KEY_ALIAS);

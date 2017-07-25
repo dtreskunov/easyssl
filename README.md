@@ -28,6 +28,15 @@ EasySSL is [licensed](https://github.com/dtreskunov/easyssl/blob/master/LICENSE)
 
 ### 1. Setting up a Certificate Authority
 These steps should be done by your Ops people!
+
+#### A note on the usage of ECDSA keys versus RSA keys
+> The handshake is almost 100% faster when using the ECDSA certificate! Again, you can run this command a few times to get a baseline but that's an incredible boost
+> in performance by just switching out the certificate you use. The other really awesome thing here is that the ECDSA key is only 256bit compared to the RSA key
+> which is 2048bit, but, the ECDSA key offers more security. At only 256bit the ECDSA key is almost as strong as a 3072bit RSA key, a considerable step up in
+> security with your 50% reduction in overhead!
+>
+> https://scotthelme.co.uk/ecdsa-certificates/
+
 ```bash
 # This is a minimal working config file for demonstration purposes
 cat > openssl.cnf
@@ -44,7 +53,7 @@ SomeSecurePassword
 ^D
 
 # Create private key (make a note of the password)
-openssl genrsa -out ca-key.pem -aes128 -passout file:ca-pass.txt 2048
+openssl ecparam -genkey -name secp256r1 | openssl ec -out ca-key.pem -aes128 -passout file:ca-pass.txt
 
 # Create CA certificate
 openssl req -x509 -new -nodes -key ca-key.pem -passin file:ca-pass.txt -days 3650 -sha256 -out ca-cert.pem -subj '/CN=EasySSL CA'
@@ -73,7 +82,7 @@ AnotherSecurePassword
 ^D
 
 # Create private key
-openssl genrsa -out app-key.pem -aes128 -passin file:app-pass.txt 2048
+openssl ecparam -genkey -name secp256r1 | openssl ec -out app-key.pem -aes128 -passin file:app-pass.txt
 
 # Create Certificate Signing Request (CSR)
 # It's a good idea (although not required) to provide the app's correct DNS name
@@ -93,13 +102,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.6.0')
+compile('com.github.dtreskunov:easyssl:0.6.1')
 ```
 
 Next, add the following section to `application.yml`:
@@ -114,8 +123,31 @@ easyssl:
   certificateRevocationListCheckIntervalSeconds: 60 # default is 0
   clientAuth: WANT # default is NEED
 
-# There is no need to specify `server.ssl.` properties - they will be overridden by EasySSL
-#
+# There is no need to specify `server.ssl.` properties - they will be managed by EasySSL.
+# You may want to set the `enabledProtocols` and `ciphers` properties for improved security, however.
+# See https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices
+server.ssl:
+  enabledProtocols: TLSv1.2
+  ciphers:
+  - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+  - TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+  - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+  - TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+  - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+  - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+  - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+  - TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+  - TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+  - TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+  - TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+  - TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+  - TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+
 # These settings (including keyPassword) may be specified via any of Boot's Externalized Configuration mechanisms.
 # See https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html
 ```

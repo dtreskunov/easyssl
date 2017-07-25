@@ -44,12 +44,12 @@ EOF
 
     # Create private key
     if key_pkcs8
-      `openssl genrsa 2048 | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
+      `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
     else
       if key_pass
-        `openssl genrsa -out #{key} -aes128 -passout pass:#{key_pass} 2048`
+        `openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key} -aes128 -passout pass:#{key_pass}`
       else
-        `openssl genrsa -out #{key} 2048`
+        `openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key}`
       end
     end
 
