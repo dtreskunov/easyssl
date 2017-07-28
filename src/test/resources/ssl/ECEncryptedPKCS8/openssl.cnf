@@ -1,0 +1,6 @@
+[ ca ]
+default_ca = CA_default
+[ CA_default ]
+database = ECEncryptedPKCS8/index.txt
+default_md = default
+default_crl_days = 30

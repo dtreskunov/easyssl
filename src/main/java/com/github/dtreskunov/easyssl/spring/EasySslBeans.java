@@ -3,7 +3,7 @@ package com.github.dtreskunov.easyssl.spring;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.security.GeneralSecurityException;
+import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -129,16 +129,24 @@ public class EasySslBeans {
         final PEMKeyPair pemKeyPair;
         final KeyPair keyPair;
         if (pemObject instanceof PEMEncryptedKeyPair) {
+            if (keyPassword == null || keyPassword.isEmpty()) {
+                throw new KeyException("Need a non-empty password for a PEMEncryptedKeyPair");
+            }
             PEMDecryptorProvider decryptor = new JcePEMDecryptorProviderBuilder().build(keyPassword.toCharArray());
             pemKeyPair = ((PEMEncryptedKeyPair)pemObject).decryptKeyPair(decryptor);
         } else if (pemObject instanceof PEMKeyPair) {
             pemKeyPair = (PEMKeyPair) pemObject;
+        } else if (pemObject instanceof PrivateKeyInfo) {
+            return converter.getPrivateKey((PrivateKeyInfo) pemObject);
         } else if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
+            if (keyPassword == null || keyPassword.isEmpty()) {
+                throw new KeyException("Need a non-empty password for a PKCS8EncryptedPrivateKeyInfo");
+            }
             InputDecryptorProvider decryptor = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(keyPassword.toCharArray());
             PrivateKeyInfo privateKeyInfo = ((PKCS8EncryptedPrivateKeyInfo)pemObject).decryptPrivateKeyInfo(decryptor);
             return converter.getPrivateKey(privateKeyInfo);
         } else {
-            throw new GeneralSecurityException("Private key is expected to be either a PEMEncryptedKeyPair or a PEMKeyPair, but is actually a " + pemObject.getClass().getSimpleName());
+            throw new KeyException("Private key is expected to be either a PEMEncryptedKeyPair or a PEMKeyPair, but is actually a " + pemObject.getClass().getSimpleName());
         }
         keyPair = converter.getKeyPair(pemKeyPair);
         return keyPair.getPrivate();

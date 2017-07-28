@@ -44,7 +44,11 @@ EOF
 
     # Create private key
     if key_pkcs8
-      `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
+      if key_pass
+        `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
+      else
+        `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -nocrypt`
+      end
     else
       if key_pass
         `openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key} -aes128 -passout pass:#{key_pass}`
@@ -89,6 +93,10 @@ entities = {}
   Entity.new('localhost1',      '/OU=Localhost1/CN=localhost', 'ca', 'localhost1-password'),
   Entity.new('localhost2',      '/OU=Localhost2/CN=localhost', 'ca', 'localhost2-password', true),
   Entity.new('fake_localhost1', '/OU=Fake Localhost1/CN=localhost', 'fake_ca'),
+  Entity.new('ECEncryptedPKCS8', '/CN=ECEncryptedPKCS8', 'ca', 'ECEncryptedPKCS8', true),
+  Entity.new('ECEncryptedOpenSsl', '/CN=ECEncryptedOpenSsl', 'ca', 'ECEncryptedOpenSsl', false),
+  Entity.new('ECPlainPKCS8', '/CN=ECPlainPKCS8', 'ca', nil, true),
+  Entity.new('ECPlainOpenSsl', '/CN=ECPlainOpenSsl', 'ca', nil, false),
 ].each do |entity|
   entity.gen
   entities[entity.name] = entity
