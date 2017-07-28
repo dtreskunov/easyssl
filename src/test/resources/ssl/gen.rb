@@ -15,6 +15,10 @@ Entity = Struct.new(:name, :dn, :ca_name, :key_pass, :key_pkcs8) do
     "#{name}/cert.pem"
   end
 
+  def cert_chain
+    "#{name}/cert_chain.pem"
+  end
+
   def cnf
     "#{name}/openssl.cnf"
   end
@@ -62,6 +66,8 @@ EOF
       `openssl req -new -key #{key} #{key_pass ? "-passin pass:"+key_pass : ''} -out #{csr} -subj "#{dn}"`
       # Have the CA sign the CSR
       `openssl x509 -req -in #{csr} -CA #{ca_name}/cert.pem -CAkey #{ca_name}/key.pem -CAcreateserial -days 3650 -sha256 -out #{cert}`
+      # Concatenate the CA's cert with the entity's cert
+      cat(cert_chain, cert, "#{ca_name}/cert.pem")
     else
       # Create root certificate
       `openssl req -x509 -new -nodes -key #{key} -days 3650 -sha256 -out #{cert} -subj "#{dn}"`
@@ -80,6 +86,16 @@ EOF
   def revoke(name)
     # This updates index.txt
     `openssl ca -revoke #{name}/cert.pem -config #{cnf} -cert #{cert} -keyfile #{key}`
+  end
+
+  def cat(dest, *files)
+    File.open(dest, 'w') do |output|
+      files.each do |file|
+        File.open(file) do |input|
+          output.write(input.read)
+        end
+      end
+    end
   end
 end
 

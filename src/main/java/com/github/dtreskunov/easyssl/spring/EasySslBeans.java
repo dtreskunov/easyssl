@@ -1,8 +1,10 @@
 package com.github.dtreskunov.easyssl.spring;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -17,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,6 +56,7 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.Resource;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.github.dtreskunov.easyssl.CRLTrustManager;
@@ -105,17 +109,25 @@ public class EasySslBeans {
                 .build();
     }
 
-    private static Certificate getCertificate(Resource certificate) throws Exception {
+    private static List<Certificate> getCertificates(Resource certificate) throws Exception {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        return cf.generateCertificate(certificate.getInputStream());
+        // if several certs are concatenated together OpenSSL-style, this will only load the first one!
+        // cf.generateCertificate(certificate.getInputStream());
+        String[] pems = StreamUtils.copyToString(certificate.getInputStream(), StandardCharsets.UTF_8).split("(?=-----BEGIN CERTIFICATE-----)");
+        ArrayList<Certificate> certs = new ArrayList<>(pems.length);
+        for (String pem: pems) {
+            certs.add(cf.generateCertificate(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8))));
+        }
+        return certs;
     }
 
     private static KeyStore getKeyStore(Resource certificate, Resource key, String keyPassword) throws Exception {
         PrivateKey privateKey = getPrivateKey(key.getInputStream(), keyPassword);
+        List<Certificate> certs = getCertificates(certificate);
 
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
-        keyStore.setKeyEntry(KEY_ALIAS, privateKey, KEY_PASSWORD.toCharArray(), new Certificate[]{getCertificate(certificate)});
+        keyStore.setKeyEntry(KEY_ALIAS, privateKey, KEY_PASSWORD.toCharArray(), certs.toArray(new Certificate[certs.size()]));
         return keyStore;
     }
 
@@ -154,8 +166,10 @@ public class EasySslBeans {
 
     private static X509TrustManager getTrustManager(EasySslProperties config) throws Exception {
         ArrayList<PublicKey> publicKeys = new ArrayList<>(config.getCaCertificate().size());
-        for (Resource c: config.getCaCertificate()) {
-            publicKeys.add(getCertificate(c).getPublicKey());
+        for (Resource r: config.getCaCertificate()) {
+            for (Certificate c: getCertificates(r)) {
+                publicKeys.add(c.getPublicKey());
+            }
         }
         return new CRLTrustManager(
                 config.getCertificateRevocationList(),

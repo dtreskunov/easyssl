@@ -59,4 +59,16 @@ public class FileFormatTests {
         revokedClientProperties.setKey(new ClassPathResource("/ssl/ECPlainOpenSsl/key.pem"));
         EasySslBeans.getSSLContext(revokedClientProperties);
     }
+
+    /**
+     * openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key}
+     */
+    @Test
+    public void testECPlainOpenSslChain() throws Exception {
+        EasySslProperties revokedClientProperties = new EasySslProperties();
+        revokedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
+        revokedClientProperties.setCertificate(new ClassPathResource("/ssl/ECPlainOpenSsl/cert_chain.pem"));
+        revokedClientProperties.setKey(new ClassPathResource("/ssl/ECPlainOpenSsl/key.pem"));
+        EasySslBeans.getSSLContext(revokedClientProperties);
+    }
 }

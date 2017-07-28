@@ -70,6 +70,18 @@ public class IntegrationTestUsingRealServer {
     }
 
     @Test
+    public void happyCase_alternative() throws Exception {
+        EasySslProperties clientProperties = new EasySslProperties();
+        clientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
+        clientProperties.setCertificate(new ClassPathResource("/ssl/ECEncryptedOpenSsl/cert.pem"));
+        clientProperties.setKey(new ClassPathResource("/ssl/ECEncryptedOpenSsl/key.pem"));
+        clientProperties.setKeyPassword("ECEncryptedOpenSsl");
+        RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(clientProperties));
+        ResponseEntity<String> response = revokedClientRestTemplate.getForEntity("/whoami", String.class);
+        Assert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
+    }
+
+    @Test
     public void serverRejectsRevokedClient() throws Exception {
         EasySslProperties revokedClientProperties = new EasySslProperties();
         revokedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
