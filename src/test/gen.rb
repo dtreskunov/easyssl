@@ -99,12 +99,11 @@ EOF
   end
 end
 
-Dir.chdir File.dirname(__FILE__)
-
 entities = {}
 
 [
   Entity.new('ca',              '/CN=EasySSL CA'),
+  Entity.new('another_ca',      '/CN=EasySSL Another CA'),
   Entity.new('fake_ca',         '/CN=EasySSL Fake CA'),
   Entity.new('localhost1',      '/OU=Localhost1/CN=localhost', 'ca', 'localhost1-password'),
   Entity.new('localhost2',      '/OU=Localhost2/CN=localhost', 'ca', 'localhost2-password', true),

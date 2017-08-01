@@ -1,6 +1,0 @@
-[ ca ]
-default_ca = CA_default
-[ CA_default ]
-database = ca/index.txt
-default_md = default
-default_crl_days = 30

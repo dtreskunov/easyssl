@@ -56,6 +56,19 @@ bootRepackage {
   enabled = false
 }
 
+task generateTestCerts(type: Exec) {
+  def dir = new File(project.rootDir, "src/test/resources/ssl")
+  doFirst {
+    dir.mkdirs()
+  }
+  workingDir dir
+  commandLine 'ruby', '../../gen.rb'
+}
+
+test {
+  dependsOn generateTestCerts
+}
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
   classifier = 'javadoc'
   from 'build/docs/javadoc'

@@ -1,7 +1,6 @@
 package com.github.dtreskunov.easyssl;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CRLReason;
@@ -56,7 +55,8 @@ public class CRLTrustManager implements X509TrustManager {
                 crl.verify(publicKey);
                 LOG.info("Loaded CRL from {}", resource);
                 return crl;
-            } catch (InvalidKeyException e) {
+            } catch (Exception e) {
+                LOG.debug("Unable to verify CRL against provided public key", e);
                 continue;
             }
         }
