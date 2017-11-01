@@ -1,6 +1,5 @@
 package com.github.dtreskunov.easyssl;
 
-import java.io.IOException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CRLReason;
@@ -10,12 +9,18 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
-import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -33,19 +38,52 @@ import org.springframework.util.Assert;
  */
 public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
-    private final Resource m_crlResource;
-    private final TemporalAmount m_crlResourceCheckInterval;
-    private final Collection<PublicKey> m_publicKeys;
+    private static final long LOAD_CRL_TIMEOUT_MS = 1000L;
 
+    private final ScheduledExecutorService m_scheduler = Executors.newSingleThreadScheduledExecutor();
     private X509CRL m_crl = null;
-    private Instant m_lastLoaded = null;
+    private long m_crlLoadedTimestamp = -1;
 
-    public CRLTrustManager(Resource crlResource, TemporalAmount crlResourceCheckInterval, Collection<PublicKey> publicKeys) {
+    public CRLTrustManager(Resource crlResource, TemporalAmount crlResourceCheckInterval, Collection<PublicKey> publicKeys) throws InterruptedException, ExecutionException, TimeoutException {
+        Assert.notNull(crlResource, "crlResource may not be null");
         Assert.notNull(crlResourceCheckInterval, "crlResourceCheckInterval may not be null");
         Assert.notNull(publicKeys, "publicKeys may not be null");
-        m_crlResource = crlResource;
-        m_crlResourceCheckInterval = crlResourceCheckInterval;
-        m_publicKeys = publicKeys;
+
+        Runnable loadCRLTask = () -> {
+            try {
+                if (m_crl == null || m_crlLoadedTimestamp < crlResource.lastModified()) {
+                    m_crl = loadCRL(crlResource, publicKeys);
+                    m_crlLoadedTimestamp = System.currentTimeMillis();
+                }
+            } catch (Exception e) {
+                LOG.error("Unable to load CRL from " + crlResource, e);
+            }
+        };
+
+        long period = crlResourceCheckInterval.get(ChronoUnit.SECONDS);
+
+        addShutdownHook(m_scheduler);
+        m_scheduler.submit(loadCRLTask).get(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        m_scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
+    }
+
+    private static void addShutdownHook(ExecutorService executor) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                executor.shutdown();
+                try {
+                    if (executor.awaitTermination(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                        LOG.debug("ExecutorService shut down gracefully");
+                    } else {
+                        executor.shutdownNow();
+                        LOG.warn("ExecutorService shut down abruptly");
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private static X509CRL loadCRL(Resource resource, Collection<PublicKey> publicKeys) throws Exception {
@@ -61,25 +99,6 @@ public class CRLTrustManager implements X509TrustManager {
             }
         }
         throw new SignatureException("Unable to verify CRL against any provided public keys");
-    }
-
-    private boolean shouldLoadCRL() throws IOException {
-        if (m_lastLoaded == null) {
-            return true;
-        }
-        if (Instant.now().isAfter(m_lastLoaded.plus(m_crlResourceCheckInterval)) &&
-                Instant.ofEpochMilli(m_crlResource.lastModified()).isAfter(m_lastLoaded)) {
-            return true;
-        }
-        return false;
-    }
-
-    private synchronized void maybeLoadCRL() throws Exception {
-        if (!shouldLoadCRL()) {
-            return;
-        }
-        m_crl = loadCRL(m_crlResource, m_publicKeys);
-        m_lastLoaded = Instant.now();
     }
 
     @Override
@@ -98,13 +117,11 @@ public class CRLTrustManager implements X509TrustManager {
     }
 
     private void check(X509Certificate[] chain) throws CertificateException {
-        if (chain == null || chain.length == 0 || m_crlResource == null) {
+        if (chain == null || chain.length == 0) {
             return;
         }
-        try {
-            maybeLoadCRL();
-        } catch (Exception e) {
-            throw new RuntimeException("Error loading CRL", e);
+        if (m_crl == null) {
+            throw new RuntimeException("Error loading CRL");
         }
         for (X509Certificate cert: chain) {
             X509CRLEntry revocation  = m_crl.getRevokedCertificate(cert);

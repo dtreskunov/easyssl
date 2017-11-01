@@ -93,6 +93,23 @@ public class EasySslBeans {
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
     private static final String KEY_ALIAS = "easyssl-key";
 
+    private static final X509TrustManager NOOP_TRUST_MANAGER = new X509TrustManager() {
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            // no-op
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            // no-op
+        }
+    };
+
     public static SSLContext getSSLContext(EasySslProperties config) throws Exception {
         X509TrustManager trustManager = getTrustManager(config);
         TrustStrategy trustStrategy = new TrustStrategy() {
@@ -165,6 +182,9 @@ public class EasySslBeans {
     }
 
     private static X509TrustManager getTrustManager(EasySslProperties config) throws Exception {
+        if (config.getCertificateRevocationList() == null) {
+            return NOOP_TRUST_MANAGER;
+        }
         ArrayList<PublicKey> publicKeys = new ArrayList<>(config.getCaCertificate().size());
         for (Resource r: config.getCaCertificate()) {
             for (Certificate c: getCertificates(r)) {
