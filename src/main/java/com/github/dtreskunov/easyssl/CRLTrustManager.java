@@ -40,7 +40,6 @@ public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
     private static final long LOAD_CRL_TIMEOUT_MS = 1000L;
 
-    private final ScheduledExecutorService m_scheduler = Executors.newSingleThreadScheduledExecutor();
     private X509CRL m_crl = null;
     private long m_crlLoadedTimestamp = -1;
 
@@ -62,9 +61,17 @@ public class CRLTrustManager implements X509TrustManager {
 
         long period = crlResourceCheckInterval.get(ChronoUnit.SECONDS);
 
-        addShutdownHook(m_scheduler);
-        m_scheduler.submit(loadCRLTask).get(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        m_scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true);
+            t.setName("CRLTrustManager");
+            return t;
+        });
+        addShutdownHook(scheduler);
+        scheduler.submit(loadCRLTask).get(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        if (period > 0) {
+            scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
+        }
     }
 
     private static void addShutdownHook(ExecutorService executor) {
@@ -94,7 +101,7 @@ public class CRLTrustManager implements X509TrustManager {
                 LOG.info("Loaded CRL from {}", resource);
                 return crl;
             } catch (Exception e) {
-                LOG.debug("Unable to verify CRL against provided public key", e);
+                LOG.debug("Unable to verify CRL from {} against a public key {} due to {}", resource, publicKey, e.toString());
                 continue;
             }
         }

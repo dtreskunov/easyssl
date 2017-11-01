@@ -71,7 +71,7 @@ public class EasySslProperties {
     }
 
     /**
-     * @return How often the CRL should be refreshed (defaults to "for every request")
+     * @return How often the CRL should be refreshed (defaults to "once at startup")
      */
     public long getCertificateRevocationListCheckIntervalSeconds() {
         return m_certificateRevocationListCheckIntervalSeconds;
