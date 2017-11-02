@@ -124,7 +124,7 @@ easyssl:
   clientAuth: WANT # default is NEED
 
 # There is no need to specify `server.ssl.` properties - they will be managed by EasySSL.
-# You may want to set the `enabledProtocols` and `ciphers` properties for improved security, however.
+# However, for improved security, you may want to set the `enabledProtocols` and `ciphers` properties.
 # See https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices
 server.ssl:
   enabledProtocols: TLSv1.2
