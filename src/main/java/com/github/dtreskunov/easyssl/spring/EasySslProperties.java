@@ -38,6 +38,7 @@ public class EasySslProperties {
     private Resource m_certificate;
 
     private long m_certificateRevocationListCheckIntervalSeconds;
+    private long m_certificateRevocationListCheckTimeoutSeconds;
     private Resource m_certificateRevocationList;
 
     @NotNull
@@ -75,6 +76,13 @@ public class EasySslProperties {
      */
     public long getCertificateRevocationListCheckIntervalSeconds() {
         return m_certificateRevocationListCheckIntervalSeconds;
+    }
+
+    /**
+     * @return Timeout on getting the CRL refreshed (defaults to "no timeout")
+     */
+    public long getCertificateRevocationListCheckTimeoutSeconds() {
+        return m_certificateRevocationListCheckTimeoutSeconds;
     }
 
     /**
@@ -123,6 +131,9 @@ public class EasySslProperties {
     }
     public void setCertificateRevocationListCheckIntervalSeconds(long certificateRevocationListCheckIntervalSeconds) {
         m_certificateRevocationListCheckIntervalSeconds = certificateRevocationListCheckIntervalSeconds;
+    }
+    public void setCertificateRevocationListCheckTimeoutSeconds(long certificateRevocationListCheckTimeoutSeconds) {
+        m_certificateRevocationListCheckTimeoutSeconds = certificateRevocationListCheckTimeoutSeconds;
     }
     public void setKey(Resource key) {
         m_key = key;

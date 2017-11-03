@@ -9,18 +9,14 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -32,65 +28,52 @@ import org.springframework.util.Assert;
 /**
  * Verifies chains of {@link X509Certificate X.509 certificates} against the provided {@link X509CRL Certificate Revocation List} (CRL).
  * The CRL is specified as a Spring {@link Resource}, so it can be loaded from a remote URL. The CRL is checked for
- * {@link Resource#lastModified() last modified} timestamp and is refreshed accordingly. This check is skipped if the last refresh was
- * within {@code crlResourceCheckInterval} from now. The signature on the CRL is verified against some of provided {@link PublicKey}s
- * (there may be several CAs).
+ * {@link Resource#lastModified() last modified} timestamp and is refreshed accordingly. The signature on the CRL is verified against
+ * some of provided {@link PublicKey}s (there may be several CAs).
  */
 public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
-    private static final long LOAD_CRL_TIMEOUT_MS = 1000L;
+
+    private static final ThreadFactory DAEMON_THREAD_FACTORY = r -> {
+        Thread t = Executors.defaultThreadFactory().newThread(r);
+        t.setDaemon(true);
+        t.setName(CRLTrustManager.class.getSimpleName());
+        return t;
+    };
 
     private X509CRL m_crl = null;
     private long m_crlLoadedTimestamp = -1;
 
-    public CRLTrustManager(Resource crlResource, TemporalAmount crlResourceCheckInterval, Collection<PublicKey> publicKeys) throws InterruptedException, ExecutionException, TimeoutException {
+    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys, long timeout, long period, TimeUnit unit) throws Exception {
         Assert.notNull(crlResource, "crlResource may not be null");
-        Assert.notNull(crlResourceCheckInterval, "crlResourceCheckInterval may not be null");
         Assert.notNull(publicKeys, "publicKeys may not be null");
+        Assert.notNull(unit, "unit may not be null");
+        Assert.isTrue(timeout >= 0, "timeout must be greater than or equal to zero");
+        Assert.isTrue(period == 0 || period > timeout, "period must be zero or greater than timeout");
 
+        TimeoutUtils.Builder withTimeout = TimeoutUtils.builder().setName("Load CRL").setTimeout(timeout, unit);
         Runnable loadCRLTask = () -> {
             try {
-                if (m_crl == null || m_crlLoadedTimestamp < crlResource.lastModified()) {
-                    m_crl = loadCRL(crlResource, publicKeys);
-                    m_crlLoadedTimestamp = System.currentTimeMillis();
-                }
+                withTimeout.run(() -> {
+                    try {
+                        if (m_crl == null || m_crlLoadedTimestamp < crlResource.lastModified() || true) {
+                            m_crl = loadCRL(crlResource, publicKeys);
+                            m_crlLoadedTimestamp = System.currentTimeMillis();
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             } catch (Exception e) {
-                LOG.error("Unable to load CRL from " + crlResource, e);
+                throw new RuntimeException(e);
             }
         };
 
-        long period = crlResourceCheckInterval.get(ChronoUnit.SECONDS);
-
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setDaemon(true);
-            t.setName("CRLTrustManager");
-            return t;
-        });
-        addShutdownHook(scheduler);
-        scheduler.submit(loadCRLTask).get(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        loadCRLTask.run();
         if (period > 0) {
+            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(DAEMON_THREAD_FACTORY);
             scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
         }
-    }
-
-    private static void addShutdownHook(ExecutorService executor) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                executor.shutdown();
-                try {
-                    if (executor.awaitTermination(LOAD_CRL_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                        LOG.debug("ExecutorService shut down gracefully");
-                    } else {
-                        executor.shutdownNow();
-                        LOG.warn("ExecutorService shut down abruptly");
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 
     private static X509CRL loadCRL(Resource resource, Collection<PublicKey> publicKeys) throws Exception {

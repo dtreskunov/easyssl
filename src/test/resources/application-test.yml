@@ -8,7 +8,8 @@ easyssl:
   key: file:src/test/resources/ssl/localhost1/key.pem
   keyPassword: localhost1-password
   certificateRevocationList: file:src/test/resources/ssl/ca/crl.pem
-  certificateRevocationListCheckIntervalSeconds: 60
+  certificateRevocationListCheckIntervalSeconds: 2
+  certificateRevocationListCheckTimeoutSeconds: 1
   clientAuth: WANT
 
 server.ssl:

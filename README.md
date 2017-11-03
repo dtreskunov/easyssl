@@ -102,13 +102,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.6</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.6.2')
+compile('com.github.dtreskunov:easyssl:0.6.6')
 ```
 
 Next, add the following section to `application.yml`:

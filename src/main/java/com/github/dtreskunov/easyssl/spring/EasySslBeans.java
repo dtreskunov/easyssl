@@ -15,13 +15,13 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -193,8 +193,11 @@ public class EasySslBeans {
         }
         return new CRLTrustManager(
                 config.getCertificateRevocationList(),
-                Duration.ofSeconds(config.getCertificateRevocationListCheckIntervalSeconds()),
-                publicKeys);
+                publicKeys,
+                config.getCertificateRevocationListCheckTimeoutSeconds(),
+                config.getCertificateRevocationListCheckIntervalSeconds(),
+                TimeUnit.SECONDS
+                );
     }
 
     private static KeyStore getTrustStore(Collection<Resource> certificates) throws Exception {
