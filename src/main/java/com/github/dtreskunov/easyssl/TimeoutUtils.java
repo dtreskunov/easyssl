@@ -26,7 +26,7 @@ public class TimeoutUtils {
         private Builder() {}
 
         /**
-         * Used to construct descriptive exception messages (default: {@code TimeoutUtils})
+         * Used to construct descriptive exception messages (default: "TimeoutUtils")
          */
         public Builder setName(String name) {
             m_name = name;
@@ -34,7 +34,7 @@ public class TimeoutUtils {
         }
 
         /**
-         * @see {@link Thread#setDaemon(boolean)} (default: {@code true})
+         * See {@link Thread#setDaemon(boolean)} (default: true)
          */
         public Builder setDaemon(boolean daemon) {
             m_daemon = daemon;
@@ -42,7 +42,7 @@ public class TimeoutUtils {
         }
 
         /**
-         * Whether to call {@link Future#cancel(boolean)} (default: {@code true})
+         * Whether to call {@link Future#cancel(boolean)} (default: true)
          */
         public Builder setCancel(boolean cancel) {
             m_cancel = cancel;
@@ -50,7 +50,7 @@ public class TimeoutUtils {
         }
 
         /**
-         * Parameter to give to {@link Future#cancel(boolean)} (default: {@code true})
+         * Parameter to give to {@link Future#cancel(boolean)} (default: true)
          */
         public Builder setMayInterruptIfRunning(boolean mayInterruptIfRunning) {
             m_mayInterruptIfRunning = mayInterruptIfRunning;
@@ -58,8 +58,8 @@ public class TimeoutUtils {
         }
 
         /**
-         * @param timeout number >= 0 (default: {@code 0})
-         * @param unit may be null if timeout is zero (default: {@code null})
+         * @param timeout number &gt;= 0 (default: 0)
+         * @param unit may be null if timeout is zero (default: null)
          */
         public Builder setTimeout(long timeout, TimeUnit unit) {
             Assert.isTrue(timeout >= 0, "timeout must be greater than or equal to zero");
