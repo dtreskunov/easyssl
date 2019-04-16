@@ -13,7 +13,7 @@ plugins {
   id 'java'
   id 'maven'
   id 'signing'
-  id 'org.springframework.boot' version '1.5.18.RELEASE'
+  id 'org.springframework.boot' version '1.5.20.RELEASE'
   id 'com.palantir.git-version' version '0.5.2'
 }
 apply plugin: 'io.codearte.nexus-staging'
@@ -43,7 +43,7 @@ dependencies {
   compile('org.apache.httpcomponents:httpcore')
   compile('javax.validation:validation-api:1.1.0.Final')
   compile('javax.servlet:javax.servlet-api')
-  compile('org.bouncycastle:bcpkix-jdk15on:1.60')
+  compile('org.bouncycastle:bcpkix-jdk15on:1.61')
   testCompile('org.springframework.boot:spring-boot-starter-web')
   testCompile('org.springframework.boot:spring-boot-starter-security')
   testCompile('junit:junit')
