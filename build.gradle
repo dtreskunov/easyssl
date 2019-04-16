@@ -2,31 +2,40 @@
 buildscript {
   repositories {
     mavenCentral()
-  }
-  dependencies {
-    classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.20.0"
+    //Needed only for SNAPSHOT versions
+    //maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
   }
 }
 
 // new-style plugins that ARE registered at plugins.gradle.org:
 plugins {
   id 'java'
-  id 'maven'
   id 'signing'
   id 'org.springframework.boot' version '1.5.20.RELEASE'
-  id 'com.palantir.git-version' version '0.5.2'
+  id 'com.palantir.git-version' version '0.11.0'
+  id 'io.codearte.nexus-staging' version '0.20.0'
+  id 'de.marcphilipp.nexus-publish' version '0.2.0'
 }
-apply plugin: 'io.codearte.nexus-staging'
 
 group = 'com.github.dtreskunov'
-version gitVersion() // https://github.com/palantir/gradle-git-version
 
-ext {
-  isReleaseVersion = (version ==~ /\d+\.\d+\.\d+/)
-  publishUrl = (isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2/' : 'file:build/.m2')
-  publishUserName = project.findProperty('publishUsername') ?: ''
-  publishPassword = project.findProperty('publishPassword') ?: ''
+def setVersion() {
+  def fromGit = gitVersion() // https://github.com/palantir/gradle-git-version
+  def matcher = (fromGit =~ /^(\d+\.\d+\.\d+)(.*)$/)
+  if (matcher.find()) {
+    def tag = matcher.group(1)
+    def isSnapshot = !matcher.group(2).isEmpty()
+    if (isSnapshot) {
+      version "${tag}-SNAPSHOT"
+    } else {
+      version tag
+    }
+  } else {
+    version fromGit
+  }
 }
+setVersion()
+println "Project version: ${version}"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -71,12 +80,12 @@ test {
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   classifier = 'javadoc'
-  from 'build/docs/javadoc'
+  from javadoc.destinationDir
 }
 
 task sourcesJar(type: Jar) {
-  from sourceSets.main.allSource
   classifier = 'sources'
+  from sourceSets.main.allSource
 }
 
 artifacts {
@@ -85,60 +94,83 @@ artifacts {
 }
 
 signing {
-  required { isReleaseVersion && gradle.taskGraph.hasTask('uploadArchives') }
   sign configurations.archives
 }
 
-uploadArchives {
-  doFirst {
-    println "Will upload version '${version}' to '${publishUrl}' (isReleaseVersion=${isReleaseVersion})"
-  }
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
 
-  repositories {
-    mavenDeployer {
-      if (isReleaseVersion) {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+      pom {
+        name = 'EasySSL for Spring Boot microservices'
+        description = 'EasySSL is a small library to help create Spring Boot microservices that talk to each other over HTTPS with mutual authentication'
+        url = 'https://github.com/dtreskunov/easyssl'
+
+        scm {
+          url = 'scm:git@github.com:dtreskunov/easyssl.git'
+          connection = 'scm:git@github.com:dtreskunov/easyssl.git'
+          developerConnection = 'scm:git@github.com:dtreskunov/easyssl.git'
+        }
+
+        licenses {
+          license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution = 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'dtreskunov'
+            name = 'Denis Treskunov'
+          }
+        }
       }
-      repository(url: publishUrl) {
-        authentication(
-          userName: publishUserName,
-          password: publishPassword
-        )
+
+      // create the sign pom artifact
+      pom.withXml {
+        def pomFile = file("${project.buildDir}/generated-pom.xml")
+        writeTo(pomFile)
+        def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+        artifact(pomAscFile) {
+          classifier = null
+          extension = 'pom.asc'
+        }
       }
 
-      pom.project {
-         name 'EasySSL for Spring Boot microservices'
-         packaging 'jar'
-         description 'EasySSL is a small library to help create Spring Boot microservices that talk to each other over HTTPS with mutual authentication'
-         url 'https://github.com/dtreskunov/easyssl'
+      artifact(sourcesJar) {
+        classifier = 'sources'
+      }
+      artifact(javadocJar) {
+        classifier = 'javadoc'
+      }
 
-         scm {
-           url 'scm:git@github.com:dtreskunov/easyssl.git'
-           connection 'scm:git@github.com:dtreskunov/easyssl.git'
-           developerConnection 'scm:git@github.com:dtreskunov/easyssl.git'
-         }
-
-         licenses {
-           license {
-             name 'The Apache Software License, Version 2.0'
-             url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-             distribution 'repo'
-           }
-         }
-
-         developers {
-           developer {
-             id 'dtreskunov'
-             name 'Denis Treskunov'
-           }
-         }
-       }
+      // create the signed artifacts
+      project.tasks.signArchives.signatureFiles.each {
+        artifact(it) {
+          def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+          if (matcher.find()) {
+            classifier = matcher.group(1)
+          } else {
+            classifier = null
+          }
+          extension = 'jar.asc'
+        }
+      }
     }
   }
 }
 
-// https://github.com/Codearte/gradle-nexus-staging-plugin/
-if (isReleaseVersion) {
-  uploadArchives.finalizedBy closeAndReleaseRepository
+nexusPublishing {
+  // serverUrl = uri("https://your-server.com/staging") // defaults to https://oss.sonatype.org/service/local/
+  // snapshotRepositoryUrl = uri("https://your-server.com/snapshots") // defaults to https://oss.sonatype.org/content/repositories/snapshots/
+  // username = 'username' // defaults to project.properties["nexusUsername"]
+  // password = 'password' // defaults to project.properties["nexusPassword"]
 }
 
+model {
+  tasks.publishToNexus {
+    dependsOn project.tasks.signArchives
+  }
+}
