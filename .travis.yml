@@ -7,7 +7,7 @@ jdk:
 install: true
 script:
 - ./gradlew check
-- ./gradlew -PnexusUsername=${SONATYPE_USERNAME} -PnexusPassword=${SONATYPE_PASSWORD} -Psigning.keyId=${GPG_KEY_ID} -Psigning.password=${GPG_KEY_PASSWORD} -Psigning.secretKeyRingFile=secring.gpg publishToNexus closeAndReleaseRepository --stacktrace
+- ./gradlew -PnexusUsername=${SONATYPE_USERNAME} -PnexusPassword=${SONATYPE_PASSWORD} -Psigning.keyId=${GPG_KEY_ID} -Psigning.password=${GPG_KEY_PASSWORD} -Psigning.secretKeyRingFile=secring.gpg signArchives publishToNexus closeAndReleaseRepository --stacktrace
 
 before_cache:
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
