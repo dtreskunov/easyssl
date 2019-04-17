@@ -63,6 +63,7 @@ dependencies {
   testCompile('org.springframework.boot:spring-boot-starter-test')
   testCompile('org.springframework.security:spring-security-test')
   testCompile('org.apache.httpcomponents:httpclient')
+  testCompile('com.github.stefanbirkner:system-rules:1.19.0')
 }
 
 bootRepackage {
