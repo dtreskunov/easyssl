@@ -37,6 +37,10 @@ def setVersion() {
 setVersion()
 println "Project version: ${version}"
 
+ext {
+  isSnapshotVersion = version.endsWith('SNAPSHOT')
+}
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -78,28 +82,31 @@ test {
   dependsOn generateTestCerts
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
+//disable javadoc doclint for Java8
+if (JavaVersion.current().isJava8Compatible()) {
+  allprojects {
+    tasks.withType(Javadoc) {
+      options.addStringOption('Xdoclint:none', '-quiet')
+    }
+  }
 }
 
 task sourcesJar(type: Jar) {
-  classifier = 'sources'
-  from sourceSets.main.allSource
+  from sourceSets.main.allJava
+  archiveClassifier = 'sources'
 }
 
-artifacts {
-  archives javadocJar
-  archives sourcesJar
-}
-
-signing {
-  sign configurations.archives
+task javadocJar(type: Jar) {
+  from javadoc
+  archiveClassifier = 'javadoc'
 }
 
 publishing {
   publications {
     mavenJava(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
 
       pom {
         name = 'EasySSL for Spring Boot microservices'
@@ -127,53 +134,46 @@ publishing {
           }
         }
       }
-
-      // create the sign pom artifact
-      pom.withXml {
-        def pomFile = file("${project.buildDir}/generated-pom.xml")
-        writeTo(pomFile)
-        def pomAscFile = signing.sign(pomFile).signatureFiles[0]
-        artifact(pomAscFile) {
-          classifier = null
-          extension = 'pom.asc'
-        }
-      }
-
-      artifact(sourcesJar) {
-        classifier = 'sources'
-      }
-      artifact(javadocJar) {
-        classifier = 'javadoc'
-      }
-
-      // create the signed artifacts
-      project.tasks.signArchives.signatureFiles.each {
-        artifact(it) {
-          def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
-          if (matcher.find()) {
-            classifier = matcher.group(1)
-          } else {
-            classifier = null
-          }
-          extension = 'jar.asc'
-        }
+    }
+  }
+  repositories {
+    maven {
+      def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+      def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+      url = isSnapshotVersion ? snapshotsRepoUrl : releasesRepoUrl
+      credentials {
+        username project.findProperty('nexusUsername') ?: 'secured'
+        password project.findProperty('nexusPassword') ?: 'secured'
       }
     }
   }
 }
 
-nexusPublishing {
-  serverUrl = uri("https://oss.sonatype.org/service/local/")
-  snapshotRepositoryUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+signing {
+  sign publishing.publications
 }
 
 nexusStaging {
-  username = project.properties['nexusUsername']
-  password = project.properties['nexusPassword']
+  packageGroup = group
+  numberOfRetries = 20
+  delayBetweenRetriesInMillis = 3000
 }
 
-model {
-  tasks.publishToNexus {
-    dependsOn project.tasks.signArchives
+nexusPublishing {
+  packageGroup = rootProject.nexusStaging.packageGroup
+  stagingProfileId = rootProject.nexusStaging.stagingProfileId
+  username = project.findProperty('nexusUsername') ?: 'secured'
+  password = project.findProperty('nexusPassword') ?: 'secured'
+}
+
+task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
+  if (isSnapshotVersion) {
+    enabled = false
+    dependsOn = []
   }
+}
+
+task myPublish {
+  dependsOn publishToNexus, closeAndReleaseRepositoryIfNeeded
+  closeAndReleaseRepositoryIfNeeded.mustRunAfter publishToNexus
 }
