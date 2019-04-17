@@ -163,8 +163,8 @@ publishing {
 }
 
 nexusPublishing {
-  // serverUrl = uri("https://your-server.com/staging") // defaults to https://oss.sonatype.org/service/local/
-  // snapshotRepositoryUrl = uri("https://your-server.com/snapshots") // defaults to https://oss.sonatype.org/content/repositories/snapshots/
+  serverUrl = uri("https://oss.sonatype.org/service/local/")
+  snapshotRepositoryUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
 }
 
 nexusStaging {
