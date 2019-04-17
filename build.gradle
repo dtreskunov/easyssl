@@ -165,8 +165,11 @@ publishing {
 nexusPublishing {
   // serverUrl = uri("https://your-server.com/staging") // defaults to https://oss.sonatype.org/service/local/
   // snapshotRepositoryUrl = uri("https://your-server.com/snapshots") // defaults to https://oss.sonatype.org/content/repositories/snapshots/
-  // username = 'username' // defaults to project.properties["nexusUsername"]
-  // password = 'password' // defaults to project.properties["nexusPassword"]
+}
+
+nexusStaging {
+  username = project.properties['nexusUsername']
+  password = project.properties['nexusPassword']
 }
 
 model {
