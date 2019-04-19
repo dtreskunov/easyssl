@@ -102,13 +102,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>0.6.6</version>
+  <version>0.6.9</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:0.6.6')
+compile('com.github.dtreskunov:easyssl:0.6.9')
 ```
 
 Next, add the following section to `application.yml`:
@@ -150,6 +150,17 @@ server.ssl:
 
 # These settings (including keyPassword) may be specified via any of Boot's Externalized Configuration mechanisms.
 # See https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html
+
+# Additionally, you can specify file-like resources to come from OS environment variables by using special
+# URLs with the "env" protocol, for example, you can set easyssl.key instead of "file:/path/to/app-key.pem"
+# to "env:PRIVATE_KEY".
+#
+# This is useful when secrets are provided as OS environment variables, as in the case of AWS ECS.
+#
+# Important:
+# * Spring Boot version 1.5.11 or greater is required: https://github.com/spring-projects/spring-boot/commit/3db5c70b
+# * Be careful not to use environment variables that would clash with Spring Boot's relaxed binding, e.g. don't set
+#   easyssl.key to "env:EASYSSL_KEY". Properties coming from environment variables override those from application.yml.
 ```
 
 Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Look at the
