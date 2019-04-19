@@ -151,7 +151,9 @@ publishing {
 }
 
 signing {
-  sign publishing.publications
+  if (project.hasProperty('signing.keyId') || !isSnapshotVersion) {
+    sign publishing.publications
+  }
 }
 
 nexusStaging {
