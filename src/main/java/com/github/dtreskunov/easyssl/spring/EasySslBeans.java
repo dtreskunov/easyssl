@@ -51,8 +51,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
@@ -63,7 +61,6 @@ import org.springframework.web.client.RestTemplate;
 
 import com.github.dtreskunov.easyssl.CRLTrustManager;
 import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
-import com.github.dtreskunov.easyssl.EnvProtocolResolver;
 
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
@@ -258,12 +255,6 @@ public class EasySslBeans {
         } else {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
         }
-    }
-
-    @Autowired
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public void registerEnvProtocol(ConfigurableApplicationContext context) {
-        context.addProtocolResolver(new EnvProtocolResolver());
     }
 
     @SuppressWarnings("unchecked")
