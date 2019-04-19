@@ -8,7 +8,7 @@ install: true
 script:
 - ./gradlew check
 - |
-  if [ ! -z $TRAVIS_TAG ]
+  if [ -z $TRAVIS_TAG ]
   then
     ./gradlew \
       -PnexusUsername=${SONATYPE_USERNAME} \
@@ -31,7 +31,7 @@ cache:
   - $HOME/.gradle
 
 before_install:
-  - env | grep TRAVIS_
+  - env | grep '^TRAVIS_'
   - openssl aes-256-cbc -K $encrypted_7a85652b67b9_key -iv $encrypted_7a85652b67b9_iv
     -in secring.gpg.enc -out secring.gpg -d
 
