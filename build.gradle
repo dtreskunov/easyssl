@@ -57,7 +57,10 @@ dependencies {
   compile('javax.validation:validation-api:1.1.0.Final')
   compile('javax.servlet:javax.servlet-api')
   compile('org.bouncycastle:bcpkix-jdk15on:1.61')
-  testCompile('org.springframework.boot:spring-boot-starter-web')
+  testCompile('org.springframework.boot:spring-boot-starter-web') {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+  }
+  testCompile('org.springframework.boot:spring-boot-starter-jetty')
   testCompile('org.springframework.boot:spring-boot-starter-security')
   testCompile('junit:junit')
   testCompile('org.springframework.boot:spring-boot-starter-test')
