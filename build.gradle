@@ -69,6 +69,15 @@ dependencies {
   testCompile('com.github.stefanbirkner:system-rules:1.19.0')
 }
 
+configurations.all {
+  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+    if (details.requested.group.startsWith('org.eclipse.jetty')) {
+        details.useVersion '9.4.14.v20181114'
+    }
+  }
+}  
+
+
 bootRepackage {
   enabled = false
 }
