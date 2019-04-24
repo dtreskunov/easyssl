@@ -10,17 +10,24 @@ env:
 
 # don't run `gradle assemble` https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install: true
-script:
-- ./gradlew dependencies
-- ./gradlew check
+
+stages:
+  - test
+  - name: deploy
+    if: branch = master
 
 jobs:
   include:
+    - stage: test
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
     - stage: deploy
       script:
         - |
           if [ -z $TRAVIS_TAG ]
           then
+            ./gradlew dependencies
             ./gradlew \
               -PnexusUsername=${SONATYPE_USERNAME} \
               -PnexusPassword=${SONATYPE_PASSWORD} \
