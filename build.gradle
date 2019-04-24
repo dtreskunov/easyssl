@@ -57,7 +57,11 @@ dependencies {
   compile('javax.validation:validation-api:1.1.0.Final')
   compile('javax.servlet:javax.servlet-api')
   compile('org.bouncycastle:bcpkix-jdk15on:1.61')
-  testCompile('org.springframework.boot:spring-boot-starter-web')
+  compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
+  testRuntime('org.springframework.boot:spring-boot-starter-web') {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+  }
+  testRuntime('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
   testCompile('org.springframework.boot:spring-boot-starter-security')
   testCompile('junit:junit')
   testCompile('org.springframework.boot:spring-boot-starter-test')
@@ -81,6 +85,9 @@ task generateTestCerts(type: Exec) {
 
 test {
   dependsOn generateTestCerts
+  testLogging {
+    showStandardStreams = true
+  }
 }
 
 //disable javadoc doclint for Java8

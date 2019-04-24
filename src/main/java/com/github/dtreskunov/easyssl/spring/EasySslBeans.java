@@ -39,6 +39,11 @@ import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -47,6 +52,8 @@ import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletCont
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.Ssl;
 import org.springframework.boot.context.embedded.SslStoreProvider;
+import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
+import org.springframework.boot.context.embedded.jetty.JettyServerCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -244,6 +251,44 @@ public class EasySslBeans {
             public void customize(ConfigurableEmbeddedServletContainer container) {
                 container.setSslStoreProvider(storeProvider);
                 container.setSsl(sslProperties);
+            }
+        };
+    }
+
+    /**
+     * Jetty 9.4.15 started doing additional checks on client certificates. This bit of code reverts to the old behavior.
+     *
+     * See <a href="https://github.com/eclipse/jetty.project/issues/3454">eclipse/jetty.project#3454</a>
+     */
+    @Bean
+    @ConditionalOnServerCustomizationEnabled
+    public EmbeddedServletContainerCustomizer jettyServerCustomizer() {
+        return new EmbeddedServletContainerCustomizer() {
+            private void customizeJetty(JettyEmbeddedServletContainerFactory container) {
+                container.addServerCustomizers(new JettyServerCustomizer() {
+                    @Override
+                    public void customize(Server server) {
+                        for (Connector connector: server.getConnectors()) {
+                            if (!(connector instanceof ServerConnector)) {
+                                continue;
+                            }
+                            SslConnectionFactory connectionFactory = ((ServerConnector) connector).getConnectionFactory(
+                                    SslConnectionFactory.class);
+                            if (connectionFactory == null) {
+                                continue;
+                            }
+                            SslContextFactory contextFactory = connectionFactory.getSslContextFactory();
+                            contextFactory.setEndpointIdentificationAlgorithm(null);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void customize(ConfigurableEmbeddedServletContainer container) {
+                if (container instanceof JettyEmbeddedServletContainerFactory) {
+                    customizeJetty((JettyEmbeddedServletContainerFactory) container);
+                }
             }
         };
     }
