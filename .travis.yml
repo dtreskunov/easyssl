@@ -3,23 +3,35 @@ language: java
 jdk:
   - oraclejdk8
 
+env:
+  - ORG_GRADLE_PROJECT_servletContainer=tomcat
+  - ORG_GRADLE_PROJECT_servletContainer=jetty
+  - ORG_GRADLE_PROJECT_servletContainer=undertow
+
 # don't run `gradle assemble` https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install: true
 script:
 - ./gradlew dependencies
 - ./gradlew check
-- |
-  if [ -z $TRAVIS_TAG ]
-  then
-    ./gradlew \
-      -PnexusUsername=${SONATYPE_USERNAME} \
-      -PnexusPassword=${SONATYPE_PASSWORD} \
-      -Psigning.keyId=${GPG_KEY_ID} \
-      -Psigning.password=${GPG_KEY_PASSWORD} \
-      -Psigning.secretKeyRingFile=secring.gpg \
-      --stacktrace --info \
-      myPublish
-  fi
+
+jobs:
+  include:
+    - stage: deploy
+      script:
+        - |
+          if [ -z $TRAVIS_TAG ]
+          then
+            ./gradlew \
+              -PnexusUsername=${SONATYPE_USERNAME} \
+              -PnexusPassword=${SONATYPE_PASSWORD} \
+              -Psigning.keyId=${GPG_KEY_ID} \
+              -Psigning.password=${GPG_KEY_PASSWORD} \
+              -Psigning.secretKeyRingFile=secring.gpg \
+              --stacktrace --info \
+              myPublish
+          fi
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=tomcat
 
 before_cache:
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
