@@ -3,11 +3,6 @@ language: java
 jdk:
   - oraclejdk8
 
-env:
-  - ORG_GRADLE_PROJECT_servletContainer=tomcat
-  - ORG_GRADLE_PROJECT_servletContainer=jetty
-  - ORG_GRADLE_PROJECT_servletContainer=undertow
-
 # don't run `gradle assemble` https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install: true
 
@@ -19,10 +14,26 @@ stages:
 jobs:
   include:
     - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=tomcat
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
+    - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=jetty
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
+    - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=undertow
       script:
         - ./gradlew dependencies
         - ./gradlew check
     - stage: deploy
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=tomcat
       script:
         - |
           if [ -z $TRAVIS_TAG ]
@@ -37,8 +48,6 @@ jobs:
               --stacktrace --info \
               myPublish
           fi
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=tomcat
 
 before_cache:
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
