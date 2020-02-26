@@ -48,12 +48,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
-import org.springframework.boot.context.embedded.Ssl;
-import org.springframework.boot.context.embedded.SslStoreProvider;
-import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.jetty.JettyServerCustomizer;
+import org.springframework.boot.web.embedded.jetty.ConfigurableJettyWebServerFactory;
+import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
+import org.springframework.boot.web.server.Ssl;
+import org.springframework.boot.web.server.SslStoreProvider;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -242,16 +242,13 @@ public class EasySslBeans {
 
     @Bean
     @ConditionalOnServerCustomizationEnabled
-    public EmbeddedServletContainerCustomizer easySslServletContainerCustomizer(EasySslProperties config, @Autowired(required = false) ServerProperties serverProperties) throws Exception {
+    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> easySslServletContainerCustomizer(EasySslProperties config, @Autowired(required = false) ServerProperties serverProperties) throws Exception {
         final SslStoreProvider storeProvider = getSslStoreProvider(config);
         final Ssl sslProperties = getSslProperties(config, serverProperties);
 
-        return new EmbeddedServletContainerCustomizer() {
-            @Override
-            public void customize(ConfigurableEmbeddedServletContainer container) {
-                container.setSslStoreProvider(storeProvider);
-                container.setSsl(sslProperties);
-            }
+        return factory -> {
+            factory.setSslStoreProvider(storeProvider);
+            factory.setSsl(sslProperties);
         };
     }
 
@@ -262,35 +259,26 @@ public class EasySslBeans {
      */
     @Bean
     @ConditionalOnServerCustomizationEnabled
-    public EmbeddedServletContainerCustomizer jettyServerCustomizer() {
-        return new EmbeddedServletContainerCustomizer() {
-            private void customizeJetty(JettyEmbeddedServletContainerFactory container) {
-                container.addServerCustomizers(new JettyServerCustomizer() {
-                    @Override
-                    public void customize(Server server) {
-                        for (Connector connector: server.getConnectors()) {
-                            if (!(connector instanceof ServerConnector)) {
-                                continue;
-                            }
-                            SslConnectionFactory connectionFactory = ((ServerConnector) connector).getConnectionFactory(
-                                    SslConnectionFactory.class);
-                            if (connectionFactory == null) {
-                                continue;
-                            }
-                            SslContextFactory contextFactory = connectionFactory.getSslContextFactory();
-                            contextFactory.setEndpointIdentificationAlgorithm(null);
+    public WebServerFactoryCustomizer<ConfigurableJettyWebServerFactory> jettyServerCustomizer() {
+    	return container -> {
+            container.addServerCustomizers(new JettyServerCustomizer() {
+                @Override
+                public void customize(Server server) {
+                    for (Connector connector: server.getConnectors()) {
+                        if (!(connector instanceof ServerConnector)) {
+                            continue;
                         }
+                        SslConnectionFactory connectionFactory = ((ServerConnector) connector).getConnectionFactory(
+                                SslConnectionFactory.class);
+                        if (connectionFactory == null) {
+                            continue;
+                        }
+                        SslContextFactory contextFactory = connectionFactory.getSslContextFactory();
+                        contextFactory.setEndpointIdentificationAlgorithm(null);
                     }
-                });
-            }
-
-            @Override
-            public void customize(ConfigurableEmbeddedServletContainer container) {
-                if (container instanceof JettyEmbeddedServletContainerFactory) {
-                    customizeJetty((JettyEmbeddedServletContainerFactory) container);
                 }
-            }
-        };
+            });
+    	};
     }
 
     @Autowired

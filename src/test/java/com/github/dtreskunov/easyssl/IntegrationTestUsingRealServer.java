@@ -15,10 +15,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,8 +53,10 @@ public class IntegrationTestUsingRealServer {
 
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
-        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        return new RestTemplateBuilder().rootUri(protocol + "://localhost:" + port).requestFactory(requestFactory).build();
+        return new RestTemplateBuilder()
+        		.rootUri(protocol + "://localhost:" + port)
+        		.requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
+        		.build();
     }
 
     @Before

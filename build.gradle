@@ -9,12 +9,11 @@ buildscript {
 
 // new-style plugins that ARE registered at plugins.gradle.org:
 plugins {
-  id 'java'
+  id 'java-library'
   id 'signing'
-  id 'org.springframework.boot' version '1.5.20.RELEASE'
-  id 'com.palantir.git-version' version '0.11.0'
-  id 'io.codearte.nexus-staging' version '0.20.0'
-  id 'de.marcphilipp.nexus-publish' version '0.2.0'
+  id 'com.palantir.git-version' version '0.12.2'
+  id 'io.codearte.nexus-staging' version '0.21.2'
+  id 'de.marcphilipp.nexus-publish' version '0.4.0'
 }
 
 group = 'com.github.dtreskunov'
@@ -49,29 +48,26 @@ repositories {
 }
 
 dependencies {
-  compile('org.springframework.boot:spring-boot')
-  compile('org.springframework.boot:spring-boot-autoconfigure')
-  compile('org.springframework:spring-web')
-  compile('org.slf4j:slf4j-api')
-  compile('org.apache.httpcomponents:httpcore')
-  compile('javax.validation:validation-api:1.1.0.Final')
-  compile('javax.servlet:javax.servlet-api')
-  compile('org.bouncycastle:bcpkix-jdk15on:1.61')
+  implementation platform('org.springframework.boot:spring-boot-dependencies:2.2.4.RELEASE')
+  api('org.springframework.boot:spring-boot')
+  api('org.springframework.boot:spring-boot-autoconfigure')
+  api('org.springframework:spring-web')
+  api('org.slf4j:slf4j-api')
+  api('org.apache.httpcomponents:httpcore')
+  api('javax.validation:validation-api:2.0.1.Final')
+  api('javax.servlet:javax.servlet-api')
+  api('org.bouncycastle:bcpkix-jdk15on:1.64')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
-  testRuntime('org.springframework.boot:spring-boot-starter-web') {
+  testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
   }
-  testRuntime('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
-  testCompile('org.springframework.boot:spring-boot-starter-security')
-  testCompile('junit:junit')
-  testCompile('org.springframework.boot:spring-boot-starter-test')
-  testCompile('org.springframework.security:spring-security-test')
-  testCompile('org.apache.httpcomponents:httpclient')
-  testCompile('com.github.stefanbirkner:system-rules:1.19.0')
-}
-
-bootRepackage {
-  enabled = false
+  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
+  testImplementation('org.springframework.boot:spring-boot-starter-security')
+  testImplementation('junit:junit')
+  testImplementation('org.springframework.boot:spring-boot-starter-test')
+  testImplementation('org.springframework.security:spring-security-test')
+  testImplementation('org.apache.httpcomponents:httpclient')
+  testImplementation('com.github.stefanbirkner:system-rules:1.19.0')
 }
 
 task generateTestCerts(type: Exec) {
@@ -167,13 +163,14 @@ nexusStaging {
   packageGroup = group
   numberOfRetries = 20
   delayBetweenRetriesInMillis = 3000
+  username = project.findProperty('nexusUsername') ?: 'secured'
+  password = project.findProperty('nexusPassword') ?: 'secured'
 }
 
 nexusPublishing {
-  packageGroup = rootProject.nexusStaging.packageGroup
-  stagingProfileId = rootProject.nexusStaging.stagingProfileId
-  username = project.findProperty('nexusUsername') ?: 'secured'
-  password = project.findProperty('nexusPassword') ?: 'secured'
+  repositories {
+    sonatype()
+  }
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
@@ -184,6 +181,6 @@ task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
 }
 
 task myPublish {
-  dependsOn publishToNexus, closeAndReleaseRepositoryIfNeeded
-  closeAndReleaseRepositoryIfNeeded.mustRunAfter publishToNexus
+  dependsOn publishToSonatype, closeAndReleaseRepositoryIfNeeded
+  closeAndReleaseRepositoryIfNeeded.mustRunAfter publishToSonatype
 }
