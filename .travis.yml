@@ -8,8 +8,7 @@ install: true
 
 stages:
   - test
-  - name: deploy
-    if: branch = master OR env(TRAVIS_TAG) IS present
+  - deploy
 
 jobs:
   include:
