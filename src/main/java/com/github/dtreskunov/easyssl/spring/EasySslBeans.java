@@ -79,7 +79,7 @@ import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
  * </ol>
  */
 @Configuration
-@EasySslBeans.ConditionalOnEnabled
+@ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
 public class EasySslBeans {
 
     private static final String PROTOCOL_PROPERTY = "local.server.protocol";
@@ -260,7 +260,7 @@ public class EasySslBeans {
     @Bean
     @ConditionalOnServerCustomizationEnabled
     public WebServerFactoryCustomizer<ConfigurableJettyWebServerFactory> jettyServerCustomizer() {
-    	return container -> {
+        return container -> {
             container.addServerCustomizers(new JettyServerCustomizer() {
                 @Override
                 public void customize(Server server) {
@@ -278,7 +278,7 @@ public class EasySslBeans {
                     }
                 }
             });
-    	};
+        };
     }
 
     @Autowired
