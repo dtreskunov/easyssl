@@ -37,6 +37,7 @@ jobs:
         - ./gradlew dependencies
         - |
           ./gradlew \
+            -Dorg.gradle.internal.publish.checksums.insecure=true \
             -PnexusUsername=${SONATYPE_USERNAME} \
             -PnexusPassword=${SONATYPE_PASSWORD} \
             -Psigning.keyId=${GPG_KEY_ID} \
