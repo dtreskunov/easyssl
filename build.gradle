@@ -48,7 +48,7 @@ repositories {
 }
 
 dependencies {
-  implementation platform('org.springframework.boot:spring-boot-dependencies:2.2.4.RELEASE')
+  implementation platform('org.springframework.boot:spring-boot-dependencies:2.4.6')
   api('org.springframework.boot:spring-boot')
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
@@ -56,18 +56,19 @@ dependencies {
   api('org.apache.httpcomponents:httpcore')
   api('javax.validation:validation-api:2.0.1.Final')
   api('javax.servlet:javax.servlet-api')
-  api('org.bouncycastle:bcpkix-jdk15on:1.64')
+  api('org.bouncycastle:bcpkix-jdk15on:1.68')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
+  runtimeOnly('org.springframework.boot:spring-boot-starter-validation')
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
   }
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
   testImplementation('org.springframework.boot:spring-boot-starter-security')
-  testImplementation('junit:junit')
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents:httpclient')
-  testImplementation('com.github.stefanbirkner:system-rules:1.19.0')
+  // testImplementation('com.github.stefanbirkner:system-rules:1.19.0')
+  testImplementation('org.junit-pioneer:junit-pioneer:1.4.1')
 }
 
 task generateTestCerts(type: Exec) {
@@ -80,10 +81,13 @@ task generateTestCerts(type: Exec) {
 }
 
 test {
+  useJUnitPlatform()
   dependsOn generateTestCerts
   testLogging {
     showStandardStreams = true
   }
+  // https://junit-pioneer.org/docs/environment-variables/#warnings-for-reflective-access
+  jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
 }
 
 //disable javadoc doclint for Java8

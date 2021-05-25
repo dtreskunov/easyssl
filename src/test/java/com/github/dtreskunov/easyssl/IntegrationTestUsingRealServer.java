@@ -6,13 +6,11 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +21,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -32,12 +29,8 @@ import com.github.dtreskunov.easyssl.server.Server;
 import com.github.dtreskunov.easyssl.spring.EasySslBeans;
 import com.github.dtreskunov.easyssl.spring.EasySslProperties;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class}, webEnvironment = WebEnvironment.RANDOM_PORT)
 public class IntegrationTestUsingRealServer {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Autowired
     @LocalServerPort
@@ -59,16 +52,16 @@ public class IntegrationTestUsingRealServer {
         		.build();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        Assert.assertEquals("https", protocol);
+        MatcherAssert.assertThat(protocol, Matchers.is("https"));
         restTemplate = getRestTemplate(sslContext);
     }
 
     @Test
     public void happyCase() throws Exception {
         ResponseEntity<String> response = restTemplate.getForEntity("/whoami", String.class);
-        Assert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
+        MatcherAssert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
     }
 
     @Test
@@ -80,7 +73,7 @@ public class IntegrationTestUsingRealServer {
         clientProperties.setKeyPassword("ECEncryptedOpenSsl");
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(clientProperties));
         ResponseEntity<String> response = revokedClientRestTemplate.getForEntity("/whoami", String.class);
-        Assert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
+        MatcherAssert.assertThat(response.getStatusCode(), Matchers.is(HttpStatus.OK));
     }
 
     @Test
@@ -92,10 +85,9 @@ public class IntegrationTestUsingRealServer {
         revokedClientProperties.setKeyPassword("localhost2-password");
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
 
-        thrown.expect(HttpClientErrorException.class);
-        thrown.expectMessage("403");
-
-        revokedClientRestTemplate.getForEntity("/", String.class);
+        HttpClientErrorException exception = Assertions.assertThrows(HttpClientErrorException.class, () ->
+            revokedClientRestTemplate.getForEntity("/", String.class));
+        MatcherAssert.assertThat(exception.getMessage(), Matchers.containsString("403"));
     }
 
     @Test
@@ -113,10 +105,9 @@ public class IntegrationTestUsingRealServer {
         // curl: (35) error:14094416:SSL routines:SSL3_READ_BYTES:sslv3 alert certificate unknown
         untrustedClientRestTemplate.getForEntity("/", String.class);
 
-        thrown.expect(HttpClientErrorException.class);
-        thrown.expectMessage("403");
-
-        untrustedClientRestTemplate.getForEntity("/whoami", String.class);
+        HttpClientErrorException exception = Assertions.assertThrows(HttpClientErrorException.class, () ->
+            untrustedClientRestTemplate.getForEntity("/whoami", String.class));
+        MatcherAssert.assertThat(exception.getMessage(), Matchers.containsString("403"));
     }
 
     @Test
@@ -128,8 +119,7 @@ public class IntegrationTestUsingRealServer {
         untrustedServerProperties.setKeyPassword("localhost1-password");
         RestTemplate revokedRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedServerProperties));
 
-        thrown.expect(ResourceAccessException.class);
-
-        revokedRestTemplate.getForEntity("/", String.class);
+        Assertions.assertThrows(ResourceAccessException.class, () ->
+            revokedRestTemplate.getForEntity("/", String.class));
     }
 }

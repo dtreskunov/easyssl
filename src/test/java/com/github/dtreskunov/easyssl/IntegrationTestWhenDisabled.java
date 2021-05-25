@@ -10,15 +10,12 @@
 // -----------------------------------------------------------------------------
 package com.github.dtreskunov.easyssl;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.github.dtreskunov.easyssl.IntegrationTestWhenDisabled.ScanConfiguration;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(properties = {"easyssl.enabled=false"}, classes = {ScanConfiguration.class})
 public class IntegrationTestWhenDisabled {
     @SpringBootApplication(scanBasePackages = {"com.github.dtreskunov.easyssl"})
