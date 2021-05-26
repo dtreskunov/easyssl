@@ -67,7 +67,9 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.github.dtreskunov.easyssl.CRLTrustManager;
+import com.github.dtreskunov.easyssl.ChainingTrustManager;
 import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
+import com.github.dtreskunov.easyssl.ExpirationWarningTrustManager;
 
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
@@ -99,23 +101,6 @@ public class EasySslBeans {
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
     private static final String KEY_ALIAS = "easyssl-key";
-
-    private static final X509TrustManager NOOP_TRUST_MANAGER = new X509TrustManager() {
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            // no-op
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            // no-op
-        }
-    };
 
     public static SSLContext getSSLContext(EasySslProperties config) throws Exception {
         X509TrustManager trustManager = getTrustManager(config);
@@ -189,22 +174,29 @@ public class EasySslBeans {
     }
 
     private static X509TrustManager getTrustManager(EasySslProperties config) throws Exception {
-        if (config.getCertificateRevocationList() == null) {
-            return NOOP_TRUST_MANAGER;
+        List<X509TrustManager> delegates = new ArrayList<>(2);
+
+        if (config.getCertificateExpirationWarningThreshold() != null) {
+            delegates.add(new ExpirationWarningTrustManager(config.getCertificateExpirationWarningThreshold()));
         }
-        ArrayList<PublicKey> publicKeys = new ArrayList<>(config.getCaCertificate().size());
-        for (Resource r: config.getCaCertificate()) {
-            for (Certificate c: getCertificates(r)) {
-                publicKeys.add(c.getPublicKey());
+        
+        if (config.getCertificateRevocationList() != null) {
+            ArrayList<PublicKey> publicKeys = new ArrayList<>(config.getCaCertificate().size());
+            for (Resource r: config.getCaCertificate()) {
+                for (Certificate c: getCertificates(r)) {
+                    publicKeys.add(c.getPublicKey());
+                }
             }
+            delegates.add(new CRLTrustManager(
+                    config.getCertificateRevocationList(),
+                    publicKeys,
+                    config.getCertificateRevocationListCheckTimeoutSeconds(),
+                    config.getCertificateRevocationListCheckIntervalSeconds(),
+                    TimeUnit.SECONDS
+                    ));
         }
-        return new CRLTrustManager(
-                config.getCertificateRevocationList(),
-                publicKeys,
-                config.getCertificateRevocationListCheckTimeoutSeconds(),
-                config.getCertificateRevocationListCheckIntervalSeconds(),
-                TimeUnit.SECONDS
-                );
+
+        return new ChainingTrustManager(delegates);
     }
 
     private static KeyStore getTrustStore(Collection<Resource> certificates) throws Exception {

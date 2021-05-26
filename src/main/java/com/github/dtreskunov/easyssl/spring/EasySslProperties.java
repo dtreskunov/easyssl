@@ -1,5 +1,6 @@
 package com.github.dtreskunov.easyssl.spring;
 
+import java.time.Duration;
 import java.util.List;
 
 import javax.validation.constraints.NotNull;
@@ -49,6 +50,7 @@ public class EasySslProperties {
     private boolean m_enabled = true;
     private boolean m_serverCustomizationEnabled = true;
     private ClientAuth m_clientAuth = ClientAuth.NEED;
+    private Duration m_certificateExpirationWarningThreshold;
 
     /**
      * @return Certificate Authority's (CA) certificate(s), used for validating client and server certificates, and the signature on the CRL.
@@ -120,6 +122,13 @@ public class EasySslProperties {
         return m_clientAuth;
     }
 
+    /**
+     * @return How far in advance of client/server certificate expiration to log a warning.
+     */
+    public Duration getCertificateExpirationWarningThreshold() {
+        return m_certificateExpirationWarningThreshold;
+    }
+
     public void setCaCertificate(List<Resource> caCertificate) {
         m_caCertificate = caCertificate;
     }
@@ -149,5 +158,8 @@ public class EasySslProperties {
     }
     public void setClientAuth(ClientAuth clientAuth) {
         m_clientAuth = clientAuth;
+    }
+    public void setCertificateExpirationWarningThreshold(Duration certificateExpirationWarningThreshold) {
+        m_certificateExpirationWarningThreshold = certificateExpirationWarningThreshold;
     }
 }
