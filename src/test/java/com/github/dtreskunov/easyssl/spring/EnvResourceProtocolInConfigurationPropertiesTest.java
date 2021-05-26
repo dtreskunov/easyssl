@@ -27,40 +27,40 @@ public class EnvResourceProtocolInConfigurationPropertiesTest {
     @EnableConfigurationProperties
     @Import(EnvResourceProtocol.class)
     public static class TestConfig {
-    	@ConfigurationProperties
-    	@Component
-    	public static class Properties {
-    		Resource happy;
-    		Resource sad;
-			public Resource getHappy() {
-				return happy;
-			}
-			public void setHappy(Resource happy) {
-				this.happy = happy;
-			}
-			public Resource getSad() {
-				return sad;
-			}
-			public void setSad(Resource sad) {
-				this.sad = sad;
-			}
-    	}
+        @ConfigurationProperties
+        @Component
+        public static class Properties {
+            Resource happy;
+            Resource sad;
+            public Resource getHappy() {
+                return happy;
+            }
+            public void setHappy(Resource happy) {
+                this.happy = happy;
+            }
+            public Resource getSad() {
+                return sad;
+            }
+            public void setSad(Resource sad) {
+                this.sad = sad;
+            }
+        }
     }
 
     @Autowired
     private TestConfig.Properties properties;
 
     @Test
-	@SetEnvironmentVariable(key = "HAPPY", value = "happy")
+    @SetEnvironmentVariable(key = "HAPPY", value = "happy")
     public void testHappy() throws IOException {
         assertThat(
-        		StreamUtils.copyToString(properties.getHappy().getInputStream(), Charset.defaultCharset()),
-        		is("happy"));
+                StreamUtils.copyToString(properties.getHappy().getInputStream(), Charset.defaultCharset()),
+                is("happy"));
     }
 
     @Test
     public void testSad() throws IOException {
         assertThrows(EnvironmentVariableNotSetException.class, () ->
-			properties.getSad().getInputStream());
+            properties.getSad().getInputStream());
     }
 }

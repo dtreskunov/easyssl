@@ -49,9 +49,9 @@ public class IntegrationTestUsingRealServer {
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
         return new RestTemplateBuilder()
-        		.rootUri(protocol + "://localhost:" + port)
-        		.requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
-        		.build();
+                .rootUri(protocol + "://localhost:" + port)
+                .requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
+                .build();
     }
 
     @BeforeEach

@@ -35,11 +35,11 @@ public class EnvResourceProtocolTest {
     private Resource resource;
 
     @Test
-	@SetEnvironmentVariable(key = "TEST_KEY", value = "happy")
+    @SetEnvironmentVariable(key = "TEST_KEY", value = "happy")
     public void testHappy() throws IOException {
         assertThat(
-        		StreamUtils.copyToString(resource.getInputStream(), Charset.defaultCharset()),
-        		is("happy"));
+                StreamUtils.copyToString(resource.getInputStream(), Charset.defaultCharset()),
+                is("happy"));
     }
 
     @Test
