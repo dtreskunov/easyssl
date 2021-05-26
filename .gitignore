@@ -1,4 +1,5 @@
 .gradle
+.vscode
 /build
 /bin/
 /.project

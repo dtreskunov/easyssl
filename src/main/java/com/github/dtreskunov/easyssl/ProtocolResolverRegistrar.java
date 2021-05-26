@@ -22,24 +22,24 @@ import org.springframework.util.Assert;
  * registerBeanPostProcessors}.
  */
 public class ProtocolResolverRegistrar implements ApplicationContextAware, BeanPostProcessor {
-	private final ProtocolResolver m_resolver;
+    private final ProtocolResolver m_resolver;
 
-	public ProtocolResolverRegistrar(ProtocolResolver resolver) {
-		Assert.notNull(resolver, "resolver cannot be null");
-		m_resolver = resolver;
-	}
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		((ConfigurableApplicationContext)applicationContext).addProtocolResolver(m_resolver);
-	}
+    public ProtocolResolverRegistrar(ProtocolResolver resolver) {
+        Assert.notNull(resolver, "resolver cannot be null");
+        m_resolver = resolver;
+    }
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        ((ConfigurableApplicationContext)applicationContext).addProtocolResolver(m_resolver);
+    }
 
-	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-		return bean;
-	}
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
 
-	@Override
-	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-		return bean;
-	}
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
 }

@@ -2,7 +2,7 @@ package com.github.dtreskunov.easyssl;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
 import com.github.dtreskunov.easyssl.spring.EasySslBeans;
