@@ -98,12 +98,12 @@ EOF
       # Create CSR
       `openssl req -new -key #{key} #{key_pass ? "-passin pass:"+key_pass : ''} -out #{csr} -config #{cnf}`
       # Have the CA sign the CSR
-      `openssl x509 -req -in #{csr} -CA #{ca_name}/cert.pem -CAkey #{ca_name}/key.pem -CAcreateserial -days 3650 -sha256 -out #{cert} -extensions ext -extfile #{cnf}`
+      `openssl x509 -req -in #{csr} -CA #{ca_name}/cert.pem -CAkey #{ca_name}/key.pem -CAcreateserial -days 1 -sha256 -out #{cert} -extensions ext -extfile #{cnf}`
       # Concatenate the CA's cert with the entity's cert
       cat(cert_chain, cert, "#{ca_name}/cert.pem")
     else
       # Create root certificate
-      `openssl req -x509 -new -nodes -key #{key} -days 3650 -sha256 -out #{cert} -config #{cnf}`
+      `openssl req -x509 -new -nodes -key #{key} -days 1 -sha256 -out #{cert} -config #{cnf}`
       # Create empty index.txt
       FileUtils.touch(index_txt)
     end
