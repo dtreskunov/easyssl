@@ -1,11 +1,12 @@
 package com.github.dtreskunov.easyssl.spring;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.SetEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +37,14 @@ public class EnvResourceProtocolTest {
     @Test
 	@SetEnvironmentVariable(key = "TEST_KEY", value = "happy")
     public void testHappy() throws IOException {
-        MatcherAssert.assertThat(
+        assertThat(
         		StreamUtils.copyToString(resource.getInputStream(), Charset.defaultCharset()),
-        		Matchers.is("happy"));
+        		is("happy"));
     }
 
     @Test
     public void testSad() throws IOException {
-        Assertions.assertThrows(EnvironmentVariableNotSetException.class, () ->
+        assertThrows(EnvironmentVariableNotSetException.class, () ->
             resource.getInputStream());
     }
 }

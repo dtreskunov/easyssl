@@ -67,7 +67,6 @@ dependencies {
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents:httpclient')
-  // testImplementation('com.github.stefanbirkner:system-rules:1.19.0')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.1')
 }
 
