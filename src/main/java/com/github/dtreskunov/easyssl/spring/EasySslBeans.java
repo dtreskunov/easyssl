@@ -145,6 +145,9 @@ public class EasySslBeans {
         try (PEMParser pemParser = new PEMParser(new InputStreamReader(inputStream, Charset.defaultCharset()))) {
             pemObject = pemParser.readObject();
         }
+        if (pemObject == null) {
+            throw new KeyException("No object was extracted from the input stream by the PEM parser");
+        }
 
         JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
         final PEMKeyPair pemKeyPair;
