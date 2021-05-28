@@ -2,31 +2,32 @@ package com.github.dtreskunov.easyssl;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 
 import javax.net.ssl.X509TrustManager;
 
 import org.springframework.util.Assert;
 
 /**
-  * Logs a warning when any certificate in the chain is close to expiring.
+  * Logs an error or a warning when any certificate in the chain has expired or is close to expiring.
+  * Actually rejecting expired certificates is handled elsewhere. 
  */
-public class ExpirationWarningTrustManager implements X509TrustManager {
-    private TemporalAmount warningThreshold;
+public class ExpirationCheckTrustManager implements X509TrustManager {
+    private Duration warningThreshold;
 
-    public ExpirationWarningTrustManager(TemporalAmount warningThreshold) {
+    public ExpirationCheckTrustManager(Duration warningThreshold) {
         Assert.notNull(warningThreshold, "warningThreshold may not be null");
         this.warningThreshold = warningThreshold;
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        CertificateExpirationWarning.check(chain, "remote client", warningThreshold);
+        CertificateExpirationCheck.check(chain, "remote client", warningThreshold);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        CertificateExpirationWarning.check(chain, "remote server", warningThreshold);
+        CertificateExpirationCheck.check(chain, "remote server", warningThreshold);
     }
 
     @Override
