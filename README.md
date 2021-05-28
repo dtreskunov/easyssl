@@ -102,13 +102,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.3</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:1.0.1')
+compile('com.github.dtreskunov:easyssl:1.0.3')
 ```
 
 Next, add the following section to `application.yml`:
@@ -119,8 +119,11 @@ easyssl:
   certificate: file:/path/to/app-cert.pem
   key: file:/path/to/app-key.pem
   keyPassword: AnotherSecurePassword
+  certificateExpirationWarningThreshold: 30d # logs a warning if a cert expires within this period
+  certificateExpirationWarningInterval: 1d # schedules a periodic check if local cert expires within that period
   certificateRevocationList: file:/path/to/crl.pem
   certificateRevocationListCheckIntervalSeconds: 60 # default is 0
+  certificateRevocationListCheckTimeoutSeconds: 1
   clientAuth: WANT # default is NEED
 
 # There is no need to specify `server.ssl.` properties - they will be managed by EasySSL.
