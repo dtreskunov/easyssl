@@ -32,6 +32,8 @@ import org.springframework.util.Assert;
  */
 public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
+    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(
+        ThreadFactoryFactory.createThreadFactory(true, CRLTrustManager.class.getSimpleName() + " daemon"));
 
     private X509CRL m_crl = null;
     private long m_crlLoadedTimestamp = -1;
@@ -61,11 +63,10 @@ public class CRLTrustManager implements X509TrustManager {
             }
         };
 
+        // ensure any initial exception isn't ignored (as would happen if thrown in the executor thread)
         loadCRLTask.run();
         if (period > 0) {
-            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
-                ThreadFactoryFactory.createThreadFactory(true, CRLTrustManager.class.getSimpleName() + " daemon"));
-            scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
+            SCHEDULER.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
         }
     }
 
