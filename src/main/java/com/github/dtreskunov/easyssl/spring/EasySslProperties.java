@@ -51,6 +51,7 @@ public class EasySslProperties {
     private boolean m_serverCustomizationEnabled = true;
     private ClientAuth m_clientAuth = ClientAuth.NEED;
     private Duration m_certificateExpirationWarningThreshold;
+    private Duration m_certificateExpirationWarningInterval;
 
     /**
      * @return Certificate Authority's (CA) certificate(s), used for validating client and server certificates, and the signature on the CRL.
@@ -129,6 +130,13 @@ public class EasySslProperties {
         return m_certificateExpirationWarningThreshold;
     }
 
+    /**
+     * @return How frequently to check the local certificate for expiration.
+     */
+    public Duration getCertificateExpirationWarningInterval() {
+        return m_certificateExpirationWarningInterval;
+    }
+
     public void setCaCertificate(List<Resource> caCertificate) {
         m_caCertificate = caCertificate;
     }
@@ -161,5 +169,8 @@ public class EasySslProperties {
     }
     public void setCertificateExpirationWarningThreshold(Duration certificateExpirationWarningThreshold) {
         m_certificateExpirationWarningThreshold = certificateExpirationWarningThreshold;
+    }
+    public void setCertificateExpirationWarningInterval(Duration certificateExpirationWarningInterval) {
+        m_certificateExpirationWarningInterval = certificateExpirationWarningInterval;
     }
 }

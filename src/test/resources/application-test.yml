@@ -8,6 +8,7 @@ easyssl:
   key: file:src/test/resources/ssl/localhost1/key.pem
   keyPassword: localhost1-password
   certificateExpirationWarningThreshold: 30d
+  certificateExpirationWarningInterval: 1d
   certificateRevocationList: file:src/test/resources/ssl/ca/crl.pem
   certificateRevocationListCheckIntervalSeconds: 2
   certificateRevocationListCheckTimeoutSeconds: 1
