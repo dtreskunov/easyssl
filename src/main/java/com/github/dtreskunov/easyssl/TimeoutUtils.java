@@ -94,13 +94,8 @@ public class TimeoutUtils {
          * @throws TimeoutException if the wait timed out
          */
         public <T> T call(Callable<T> callable) throws ExecutionException, InterruptedException, TimeoutException {
-            ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-                Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-                String name = m_name + (m_daemon ? " daemon" : " notdaemon");
-                thread.setDaemon(m_daemon);
-                thread.setName(name);
-                return thread;
-            });
+            ExecutorService executor = Executors.newSingleThreadExecutor(
+                ThreadFactoryFactory.createThreadFactory(m_daemon, m_name + (m_daemon ? " daemon" : " notdaemon")));
 
             Future<T> future = executor.submit(callable);
             executor.shutdown();

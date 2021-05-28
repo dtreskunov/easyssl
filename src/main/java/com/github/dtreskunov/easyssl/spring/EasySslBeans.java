@@ -15,17 +15,28 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.Filter;
+
+import com.github.dtreskunov.easyssl.CRLTrustManager;
+import com.github.dtreskunov.easyssl.CertificateExpirationWarning;
+import com.github.dtreskunov.easyssl.ChainingTrustManager;
+import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
+import com.github.dtreskunov.easyssl.ExpirationWarningTrustManager;
+import com.github.dtreskunov.easyssl.ThreadFactoryFactory;
 
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
@@ -65,11 +76,6 @@ import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
-
-import com.github.dtreskunov.easyssl.CRLTrustManager;
-import com.github.dtreskunov.easyssl.ChainingTrustManager;
-import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
-import com.github.dtreskunov.easyssl.ExpirationWarningTrustManager;
 
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
@@ -112,8 +118,25 @@ public class EasySslBeans {
             }
         };
 
+        KeyStore keyStore = getKeyStore(config.getCertificate(), config.getKey(), config.getKeyPassword());
+        if (config.getCertificateExpirationWarningThreshold() != null) {
+            Certificate[] localCerts = keyStore.getCertificateChain(KEY_ALIAS);
+            // this will throw an ArrayStoreException if any certificates are not X509Certificates, but this is quite a safe assumption
+            X509Certificate[] localX509Certs = Arrays.copyOf(localCerts, localCerts.length, X509Certificate[].class);
+            Runnable task = () -> {
+                CertificateExpirationWarning.check(localX509Certs, "local", config.getCertificateExpirationWarningThreshold());
+            };
+            task.run();
+            Duration interval = config.getCertificateExpirationWarningInterval();
+            if (interval != null) {
+                ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                    ThreadFactoryFactory.createThreadFactory(true, CertificateExpirationWarning.class.getSimpleName() + " daemon"));
+                scheduler.scheduleAtFixedRate(task, interval.getSeconds(), interval.getSeconds(), TimeUnit.SECONDS);
+            }
+        }
+
         return SSLContexts.custom()
-                .loadKeyMaterial(getKeyStore(config.getCertificate(), config.getKey(), config.getKeyPassword()), KEY_PASSWORD.toCharArray())
+                .loadKeyMaterial(keyStore, KEY_PASSWORD.toCharArray())
                 .loadTrustMaterial(getTrustStore(config.getCaCertificate()), trustStrategy)
                 .build();
     }

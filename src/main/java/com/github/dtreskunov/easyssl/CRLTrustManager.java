@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.X509TrustManager;
@@ -33,13 +32,6 @@ import org.springframework.util.Assert;
  */
 public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
-
-    private static final ThreadFactory DAEMON_THREAD_FACTORY = r -> {
-        Thread t = Executors.defaultThreadFactory().newThread(r);
-        t.setDaemon(true);
-        t.setName(CRLTrustManager.class.getSimpleName());
-        return t;
-    };
 
     private X509CRL m_crl = null;
     private long m_crlLoadedTimestamp = -1;
@@ -71,7 +63,8 @@ public class CRLTrustManager implements X509TrustManager {
 
         loadCRLTask.run();
         if (period > 0) {
-            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(DAEMON_THREAD_FACTORY);
+            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                ThreadFactoryFactory.createThreadFactory(true, CRLTrustManager.class.getSimpleName() + " daemon"));
             scheduler.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
         }
     }
