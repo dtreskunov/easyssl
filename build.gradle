@@ -53,11 +53,12 @@ dependencies {
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
   api('org.slf4j:slf4j-api')
-  api('org.apache.httpcomponents:httpcore')
   api('javax.validation:validation-api:2.0.1.Final')
   api('javax.servlet:javax.servlet-api')
   api('org.bouncycastle:bcpkix-jdk15on:1.68')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
+  compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
+  compileOnly('io.undertow:undertow-core') // needed for undertow-specific customizations
   runtimeOnly('org.springframework.boot:spring-boot-starter-validation')
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'

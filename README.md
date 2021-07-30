@@ -122,8 +122,8 @@ easyssl:
   certificateExpirationWarningThreshold: 30d # logs a warning this far ahead of expiration (default: 30d, if set to empty: logs an error at expiration)
   certificateExpirationCheckInterval: 1d # interval between repeated warnings (default: 1d, if set to empty: only one warning will be logged)
   certificateRevocationList: file:/path/to/crl.pem
-  certificateRevocationListCheckIntervalSeconds: 60 # default is 0
-  certificateRevocationListCheckTimeoutSeconds: 1
+  refreshInterval: 1m # default is no refresh
+  refreshTimeout: 1s # default is no timeout
   clientAuth: WANT # default is NEED
 
 # There is no need to specify `server.ssl.` properties - they will be managed by EasySSL.

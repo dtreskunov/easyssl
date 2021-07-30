@@ -85,6 +85,16 @@ public class TimeoutUtils {
             });
         }
 
+        public Runnable wrap(Runnable runnable) {
+            return () -> {
+                try {
+                    run(runnable);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+
         /**
          * Calls the function in a separate thread. Current thread is blocked (indefinitely if
          * timeout is zero) until the function returns or times out.

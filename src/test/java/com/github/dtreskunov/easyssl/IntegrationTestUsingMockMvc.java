@@ -29,7 +29,7 @@ public class IntegrationTestUsingMockMvc {
     public void protectedEndpoint_revoked() throws Exception {
         mvc.perform(MockMvcRequestBuilders
                 .get("/whoami")
-                .with(SecurityMockMvcRequestPostProcessors.x509("ssl/localhost2/cert.pem")))
+                .with(SecurityMockMvcRequestPostProcessors.x509("ssl/revoked_localhost/cert.pem")))
             .andExpect(MockMvcResultMatchers.status().isForbidden());
     }
 
