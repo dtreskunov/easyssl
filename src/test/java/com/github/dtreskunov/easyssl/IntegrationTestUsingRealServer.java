@@ -21,6 +21,7 @@ import com.github.dtreskunov.easyssl.spring.EasySslProperties;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -100,6 +101,14 @@ public class IntegrationTestUsingRealServer {
         } finally {
             swapPaths(LOCALHOST1, LOCALHOST2);
         }
+    }
+
+    @Test
+    @Disabled
+    public void reinitialize_soakTest() throws Exception {
+        for (int i=0; i<1000; i++) {
+            easySslHelper.reinitialize();
+        };
     }
 
     @Test
