@@ -13,6 +13,7 @@ easyssl:
   certificateRevocationList: file:src/test/resources/ssl/ca/crl.pem
   refreshInterval: 60s
   refreshTimeout: 1s
+  refreshCommand: ['sh', '-c', 'pwd']
   clientAuth: WANT
 
 server.ssl:

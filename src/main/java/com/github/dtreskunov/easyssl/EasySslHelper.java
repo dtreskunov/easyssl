@@ -1,5 +1,6 @@
 package com.github.dtreskunov.easyssl;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -105,7 +106,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         this.config = config;
 
         Scheduler.runAndSchedule(
-            "Reinitialize SSLContext",
+            "Load EasySSL resources",
             config.getRefreshTimeout().toMillis(), config.getRefreshInterval().toMillis(), TimeUnit.MILLISECONDS,
             this::initialize);
         
@@ -145,10 +146,26 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     }
 
     private void initialize() {
-        LOG.info("{} SSLContext with certificate from {}, key from {}, CA from {}, and CRL from {} with timeout {} (disabled if zero). Next update in {} (disabled if zero)",
-        initialized ? "Reinitializing" : "Initializing", config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
-        config.getRefreshTimeout(), config.getRefreshInterval());
+        LOG.info("{} EasySSL with command {}, certificate from {}, key from {}, CA from {}, and CRL from {} with timeout {} (disabled if zero). Next update in {} (disabled if zero)",
+            initialized ? "Reinitializing" : "Initializing", config.getRefreshCommand(),
+            config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
+            config.getRefreshTimeout(), config.getRefreshInterval());
         try {
+            if (config.getRefreshCommand() != null) {
+                LOG.info("Refresh command: {}", config.getRefreshCommand());
+                Process refreshProcess = Runtime.getRuntime().exec(
+                    config.getRefreshCommand().toArray(new String[config.getRefreshCommand().size()]));
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(refreshProcess.getInputStream()))) {
+                    reader.lines().forEach(outputLine -> {
+                        LOG.info("Refresh command output: {}", outputLine);
+                    });
+                }
+                int refreshProcessExitCode = refreshProcess.waitFor();
+                LOG.info("Refresh command exit code: {}", refreshProcessExitCode);
+                if (refreshProcessExitCode != 0) {
+                    throw new RuntimeException("Refresh command exited with exit code " + refreshProcessExitCode);
+                }
+            }
             trustStore = getTrustStore(config.getCaCertificate());
             trustManager = getTrustManager(config, trustStore);
             keyStore = getKeyStore(config.getCertificate(), config.getKey(), config.getKeyPassword());
@@ -163,13 +180,15 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
                 new SecureRandom());
         } catch (Exception e) {
             if (initialized) {
+                // ignore the error so that the next Scheduler execution will retry
                 LOG.error("Unable to reinitialize SSLContext", e);
+                return;
             } else {
                 throw new RuntimeException(e);
             }
         }
         if (initialized && applicationEventPublisher != null) {
-            applicationEventPublisher.publishEvent(new SSLContextReinitializedEvent(EasySslHelper.this, EasySslHelper.this));
+            applicationEventPublisher.publishEvent(new SSLContextReinitializedEvent(this, this));
         }
         initialized = true;
     }

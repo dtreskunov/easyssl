@@ -43,6 +43,8 @@ public class EasySslProperties {
     
     private Duration m_refreshTimeout = Duration.ZERO;
 
+    private List<String> m_refreshCommand;
+
     private Resource m_certificateRevocationList;
 
     @NotNull
@@ -89,6 +91,13 @@ public class EasySslProperties {
      */
     public Duration getRefreshTimeout() {
         return m_refreshTimeout;
+    }
+
+    /**
+     * @return Command to run before refreshing resources.
+     */
+    public List<String> getRefreshCommand() {
+        return m_refreshCommand;
     }
 
     /**
@@ -154,6 +163,9 @@ public class EasySslProperties {
     }
     public void setRefreshTimeout(Duration refreshTimeout) {
         m_refreshTimeout = refreshTimeout;
+    }
+    public void setRefreshCommand(List<String> refreshCommand) {
+        m_refreshCommand = refreshCommand;
     }
     public void setKey(Resource key) {
         m_key = key;
