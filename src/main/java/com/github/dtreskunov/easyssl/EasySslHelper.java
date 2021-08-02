@@ -55,6 +55,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 
 public class EasySslHelper implements ApplicationEventPublisherAware {
+    private static final Logger LOG = LoggerFactory.getLogger(EasySslHelper.class);
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
@@ -73,12 +74,27 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         }
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(EasySslHelper.class);
+    private class SslStoreProviderImpl implements SslStoreProvider {
+        @Override
+        public KeyStore getKeyStore() throws Exception {
+            synchronized(EasySslHelper.this) {
+                return keyStore;
+            }
+        }
+
+        @Override
+        public KeyStore getTrustStore() throws Exception {
+            synchronized(EasySslHelper.this) {
+                return trustStore;
+            }
+        }
+    }
 
     private final SSLContext sslContext = SSLContext.getInstance("TLS");
-    private X509TrustManager trustManager;
     private KeyStore keyStore;
     private KeyStore trustStore;
+    private X509TrustManager trustManager;
+    private final SslStoreProvider sslStoreProvider = new SslStoreProviderImpl();
     private boolean initialized;
     private ScheduledFuture<?> localCertificateExpirationCheck;
     private ApplicationEventPublisher applicationEventPublisher;
@@ -104,38 +120,28 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
-    public void reinitialize() {
+    synchronized public void reinitialize() {
         initialize();
     }
 
-    public SSLContext getSSLContext() {
+    synchronized public SSLContext getSSLContext() {
         return sslContext;
     }
 
-    public KeyStore getKeyStore() {
+    synchronized public KeyStore getKeyStore() {
         return keyStore;
     }
 
-    public KeyStore getTrustStore() {
+    synchronized public KeyStore getTrustStore() {
         return trustStore;
     }
 
-    public X509TrustManager getTrustManager() {
+    synchronized public X509TrustManager getTrustManager() {
         return trustManager;
     }
 
-    public SslStoreProvider getSslStoreProvider() {
-        return new SslStoreProvider() {
-            @Override
-            public KeyStore getKeyStore() throws Exception {
-                return keyStore;
-            }
-
-            @Override
-            public KeyStore getTrustStore() throws Exception {
-                return trustStore;
-            }
-        };
+    synchronized public SslStoreProvider getSslStoreProvider() {
+        return sslStoreProvider;
     }
 
     private void initialize() {
