@@ -10,12 +10,15 @@ import org.apache.catalina.webresources.TomcatURLStreamHandlerFactory;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.AbstractHttp11JsseProtocol;
 import org.apache.tomcat.util.net.AbstractJsseEndpoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.embedded.tomcat.ConfigurableTomcatWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationListener;
 import org.springframework.util.ReflectionUtils;
 
 public class EasySslTomcatCustomizer implements WebServerFactoryCustomizer<ConfigurableTomcatWebServerFactory>, ApplicationListener<EasySslHelper.SSLContextReinitializedEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(EasySslTomcatCustomizer.class);
     private final SetOnlyOnce<AbstractJsseEndpoint<?,?>> endpoint = new SetOnlyOnce<>();
 
     private static Class<?> getClassByName(String name) {
@@ -29,6 +32,7 @@ public class EasySslTomcatCustomizer implements WebServerFactoryCustomizer<Confi
     @SuppressWarnings("unchecked")
     @Override
     public void onApplicationEvent(EasySslHelper.SSLContextReinitializedEvent event) {
+        LOG.info("Updating Tomcat with new SSLContext");
         TomcatURLStreamHandlerFactory instance = TomcatURLStreamHandlerFactory.getInstance();
         Field TomcatURLStreamHandlerFactory_userFactories = ReflectionUtils.findField(TomcatURLStreamHandlerFactory.class, "userFactories");
         ReflectionUtils.makeAccessible(TomcatURLStreamHandlerFactory_userFactories);

@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 
 import com.github.dtreskunov.easyssl.EasySslHelper.SSLContextReinitializedEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.boot.web.embedded.undertow.UndertowWebServer;
 import org.springframework.context.ApplicationEvent;
@@ -14,6 +16,7 @@ import io.undertow.Undertow;
 import io.undertow.Undertow.ListenerInfo;
 
 public class EasySslUndertowCustomizer implements ApplicationListener<ApplicationEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(EasySslUndertowCustomizer.class);
     private final SetOnlyOnce<ListenerInfo> httpsListenerInfo = new SetOnlyOnce<>();
 
     @Override
@@ -38,6 +41,7 @@ public class EasySslUndertowCustomizer implements ApplicationListener<Applicatio
     }
 
     private void onSSLContextReinitializedEvent(SSLContextReinitializedEvent event) {
+        LOG.info("Updating Undertow with new SSLContext");
         httpsListenerInfo.get().setSslContext(event.getHelper().getSSLContext());
     }
 }
