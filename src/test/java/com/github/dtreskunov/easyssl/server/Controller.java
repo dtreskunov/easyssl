@@ -1,5 +1,7 @@
 package com.github.dtreskunov.easyssl.server;
 
+import java.security.cert.X509Certificate;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +21,7 @@ public class Controller {
     @PreAuthorize("isAuthenticated()")
     @RequestMapping("/whoami")
     public String whoami(Authentication auth) {
-        return auth.toString();
+        X509Certificate clientCert = (X509Certificate) auth.getCredentials();
+        return clientCert.getSubjectDN().toString();
     }
 }

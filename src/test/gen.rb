@@ -138,17 +138,18 @@ entities = {}
   Entity.initialize(name: 'ca',                 dn: '/CN=EasySSL CA'),
   Entity.initialize(name: 'another_ca',         dn: '/CN=EasySSL Another CA'),
   Entity.initialize(name: 'fake_ca',            dn: '/CN=EasySSL Fake CA'),
-  Entity.initialize(name: 'localhost1',         dn: '/OU=Localhost1/CN=localhost',      ca_name: 'ca', key_pass: 'localhost1-password'),
-  Entity.initialize(name: 'localhost2',         dn: '/OU=Localhost2/CN=localhost',      ca_name: 'ca', key_pass: 'localhost2-password', key_pkcs8: true),
-  Entity.initialize(name: 'fake_localhost1',    dn: '/OU=Fake Localhost1/CN=localhost', ca_name: 'fake_ca'),
-  Entity.initialize(name: 'ECEncryptedPKCS8',   dn: '/CN=ECEncryptedPKCS8',             ca_name: 'ca', key_pass: 'ECEncryptedPKCS8', key_pkcs8: true),
-  Entity.initialize(name: 'ECEncryptedOpenSsl', dn: '/CN=ECEncryptedOpenSsl',           ca_name: 'ca', key_pass: 'ECEncryptedOpenSsl'),
-  Entity.initialize(name: 'ECPlainPKCS8',       dn: '/CN=ECPlainPKCS8',                 ca_name: 'ca', key_pkcs8: true),
-  Entity.initialize(name: 'ECPlainOpenSsl',     dn: '/CN=ECPlainOpenSsl',               ca_name: 'ca'),
+  Entity.initialize(name: 'localhost1',         dn: '/OU=Localhost1/CN=localhost',        ca_name: 'ca', key_pass: 'localhost-password'),
+  Entity.initialize(name: 'localhost2',         dn: '/OU=Localhost2/CN=localhost',        ca_name: 'ca', key_pass: 'localhost-password', key_pkcs8: true),
+  Entity.initialize(name: 'revoked_localhost',  dn: '/OU=Revoked Localhost/CN=localhost', ca_name: 'ca', key_pass: 'localhost-password'),
+  Entity.initialize(name: 'fake_localhost1',    dn: '/OU=Fake Localhost1/CN=localhost',   ca_name: 'fake_ca'),
+  Entity.initialize(name: 'ECEncryptedPKCS8',   dn: '/CN=ECEncryptedPKCS8',               ca_name: 'ca', key_pass: 'ECEncryptedPKCS8', key_pkcs8: true),
+  Entity.initialize(name: 'ECEncryptedOpenSsl', dn: '/CN=ECEncryptedOpenSsl',             ca_name: 'ca', key_pass: 'ECEncryptedOpenSsl'),
+  Entity.initialize(name: 'ECPlainPKCS8',       dn: '/CN=ECPlainPKCS8',                   ca_name: 'ca', key_pkcs8: true),
+  Entity.initialize(name: 'ECPlainOpenSsl',     dn: '/CN=ECPlainOpenSsl',                 ca_name: 'ca'),
 ].each do |entity|
   entity.gen
   entities[entity.name] = entity
 end
 
-entities['ca'].revoke('localhost2')
+entities['ca'].revoke('revoked_localhost')
 entities['ca'].gen_crl

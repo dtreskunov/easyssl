@@ -20,6 +20,8 @@ EasySSL relies on plain `openssl` tools and PEM encodings to make SSL easy for D
 1. Uses PEM-encoded certificates and key files (rather than Java-specific [JKS](http://docs.oracle.com/javase/8/docs/technotes/tools/windows/keytool.html) files)
 2. Supports Certificate Revocation Lists (Spring Boot currently does not - see [SPRING-BOOT 6171](https://github.com/spring-projects/spring-boot/issues/6171))
 3. Creates an [SSLContext](https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLContext.html) bean to help write client code
+4. Supports updating server and client SSL settings without restarting
+5. Supports running an external command to fetch/generate certificates, keys, and CRLs
 
 ## License
 EasySSL is [licensed](https://github.com/dtreskunov/easyssl/blob/master/LICENSE) under the terms of Apache 2.0.
@@ -122,8 +124,9 @@ easyssl:
   certificateExpirationWarningThreshold: 30d # logs a warning this far ahead of expiration (default: 30d, if set to empty: logs an error at expiration)
   certificateExpirationCheckInterval: 1d # interval between repeated warnings (default: 1d, if set to empty: only one warning will be logged)
   certificateRevocationList: file:/path/to/crl.pem
-  certificateRevocationListCheckIntervalSeconds: 60 # default is 0
-  certificateRevocationListCheckTimeoutSeconds: 1
+  refreshInterval: 1m # default is no refresh
+  refreshTimeout: 1s # default is no timeout
+  refreshCommand: ['sh', '-c', 'echo refresh'] # run this command before (re)loading resources (default: don't run any command)
   clientAuth: WANT # default is NEED
 
 # There is no need to specify `server.ssl.` properties - they will be managed by EasySSL.

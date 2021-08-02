@@ -13,9 +13,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -32,42 +29,13 @@ import org.springframework.util.Assert;
  */
 public class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
-    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(
-        ThreadFactoryFactory.createThreadFactory(true, CRLTrustManager.class.getSimpleName() + " daemon"));
 
-    private X509CRL m_crl = null;
-    private long m_crlLoadedTimestamp = -1;
+    private final X509CRL m_crl;
 
-    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys, long timeout, long period, TimeUnit unit) throws Exception {
+    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys) throws Exception {
         Assert.notNull(crlResource, "crlResource may not be null");
         Assert.notNull(publicKeys, "publicKeys may not be null");
-        Assert.notNull(unit, "unit may not be null");
-        Assert.isTrue(timeout >= 0, "timeout must be greater than or equal to zero");
-        Assert.isTrue(period == 0 || period > timeout, "period must be zero or greater than timeout");
-
-        TimeoutUtils.Builder withTimeout = TimeoutUtils.builder().setName("Load CRL").setTimeout(timeout, unit);
-        Runnable loadCRLTask = () -> {
-            try {
-                withTimeout.run(() -> {
-                    try {
-                        if (m_crl == null || m_crlLoadedTimestamp < crlResource.lastModified() || true) {
-                            m_crl = loadCRL(crlResource, publicKeys);
-                            m_crlLoadedTimestamp = System.currentTimeMillis();
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
-
-        // ensure any initial exception isn't ignored (as would happen if thrown in the executor thread)
-        loadCRLTask.run();
-        if (period > 0) {
-            SCHEDULER.scheduleAtFixedRate(loadCRLTask, period, period, TimeUnit.SECONDS);
-        }
+        m_crl = loadCRL(crlResource, publicKeys);
     }
 
     private static X509CRL loadCRL(Resource resource, Collection<PublicKey> publicKeys) throws Exception {

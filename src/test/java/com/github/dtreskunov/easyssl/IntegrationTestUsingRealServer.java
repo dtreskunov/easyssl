@@ -5,13 +5,23 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
+import com.github.dtreskunov.easyssl.server.Server;
+import com.github.dtreskunov.easyssl.spring.EasySslBeans;
+import com.github.dtreskunov.easyssl.spring.EasySslProperties;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,12 +37,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import com.github.dtreskunov.easyssl.server.Server;
-import com.github.dtreskunov.easyssl.spring.EasySslBeans;
-import com.github.dtreskunov.easyssl.spring.EasySslProperties;
-
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class}, webEnvironment = WebEnvironment.RANDOM_PORT)
 public class IntegrationTestUsingRealServer {
+    private static final Path LOCALHOST1 = Path.of("src/test/resources/ssl/localhost1");
+    private static final Path LOCALHOST2 = Path.of("src/test/resources/ssl/localhost2");
 
     @Autowired
     @LocalServerPort
@@ -43,6 +51,9 @@ public class IntegrationTestUsingRealServer {
 
     @Autowired
     SSLContext sslContext;
+
+    @Autowired
+    EasySslHelper easySslHelper;
 
     private RestTemplate restTemplate;
 
@@ -64,6 +75,40 @@ public class IntegrationTestUsingRealServer {
     public void happyCase() throws Exception {
         ResponseEntity<String> response = restTemplate.getForEntity("/whoami", String.class);
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        assertThat(response.getBody(), is("CN=localhost, OU=Localhost1"));
+    }
+
+    @Test
+    public void happyCase_updateCertificate() throws Exception {
+        X509Certificate[] originalServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
+        assertThat(originalServerCertificates[0].getSubjectDN().getName(), is("CN=localhost, OU=Localhost1"));
+
+        ResponseEntity<String> response = restTemplate.getForEntity("/whoami", String.class);
+        assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        assertThat(response.getBody(), is("CN=localhost, OU=Localhost1"));
+
+        swapPaths(LOCALHOST1, LOCALHOST2);
+
+        try {
+            easySslHelper.reinitialize();
+
+            X509Certificate[] updatedServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
+            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectDN().getName(), is("CN=localhost, OU=Localhost2"));    
+
+            response = restTemplate.getForEntity("/whoami", String.class);
+            assertThat(response.getStatusCode(), is(HttpStatus.OK));
+            assertThat("client did not automatically load the updated cert", response.getBody(), is("CN=localhost, OU=Localhost2"));
+        } finally {
+            swapPaths(LOCALHOST1, LOCALHOST2);
+        }
+    }
+
+    @Test
+    @Disabled
+    public void reinitialize_soakTest() throws Exception {
+        for (int i=0; i<1000; i++) {
+            easySslHelper.reinitialize();
+        };
     }
 
     @Test
@@ -76,15 +121,16 @@ public class IntegrationTestUsingRealServer {
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(clientProperties));
         ResponseEntity<String> response = revokedClientRestTemplate.getForEntity("/whoami", String.class);
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
+        assertThat(response.getBody(), is("CN=ECEncryptedOpenSsl"));
     }
 
     @Test
     public void serverRejectsRevokedClient() throws Exception {
         EasySslProperties revokedClientProperties = new EasySslProperties();
         revokedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
-        revokedClientProperties.setCertificate(new ClassPathResource("/ssl/localhost2/cert.pem"));
-        revokedClientProperties.setKey(new ClassPathResource("/ssl/localhost2/key.pem"));
-        revokedClientProperties.setKeyPassword("localhost2-password");
+        revokedClientProperties.setCertificate(new ClassPathResource("/ssl/revoked_localhost/cert.pem"));
+        revokedClientProperties.setKey(new ClassPathResource("/ssl/revoked_localhost/key.pem"));
+        revokedClientProperties.setKeyPassword("localhost-password");
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
 
         HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () ->
@@ -118,10 +164,17 @@ public class IntegrationTestUsingRealServer {
         untrustedServerProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/fake_ca/cert.pem")));
         untrustedServerProperties.setCertificate(new ClassPathResource("/ssl/localhost1/cert.pem"));
         untrustedServerProperties.setKey(new ClassPathResource("/ssl/localhost1/key.pem"));
-        untrustedServerProperties.setKeyPassword("localhost1-password");
+        untrustedServerProperties.setKeyPassword("localhost-password");
         RestTemplate revokedRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedServerProperties));
 
         assertThrows(ResourceAccessException.class, () ->
             revokedRestTemplate.getForEntity("/", String.class));
+    }
+
+    private void swapPaths(Path path1, Path path2) throws IOException {
+        Path tempPath = Files.createTempDirectory(getClass().getSimpleName());
+        Files.move(path1, tempPath, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(path2, path1);
+        Files.move(tempPath, path2);
     }
 }

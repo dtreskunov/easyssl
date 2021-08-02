@@ -21,7 +21,7 @@ import org.springframework.validation.annotation.Validated;
  *   key:                       file:key.pem
  *   keyPassword:               secret
  *   certificateRevocationList: http://ca/crl.pem
- *   certificateRevocationListCheckIntervalSeconds: 60
+ *   refreshInterval: 60s
  *   # If the servlet container (if any) should NOT be configured to use SSL:
  *   # serverCustomizationEnabled: false
  *   # If auto-configuration should NOT be enabled:
@@ -38,8 +38,13 @@ public class EasySslProperties {
     @NotNull
     private Resource m_certificate;
 
-    private long m_certificateRevocationListCheckIntervalSeconds;
-    private long m_certificateRevocationListCheckTimeoutSeconds;
+    @NotNull
+    private Duration m_refreshInterval = Duration.ZERO;
+    
+    private Duration m_refreshTimeout = Duration.ZERO;
+
+    private List<String> m_refreshCommand;
+
     private Resource m_certificateRevocationList;
 
     @NotNull
@@ -75,17 +80,24 @@ public class EasySslProperties {
     }
 
     /**
-     * @return How often the CRL should be refreshed (defaults to "once at startup")
+     * @return How often the {@link Resource} properties should be refreshed (defaults to "once at startup"): key, cert, CA cert, and CRL.
      */
-    public long getCertificateRevocationListCheckIntervalSeconds() {
-        return m_certificateRevocationListCheckIntervalSeconds;
+    public Duration getRefreshInterval() {
+        return m_refreshInterval;
     }
 
     /**
-     * @return Timeout on getting the CRL refreshed (defaults to "no timeout")
+     * @return Timeout on refreshing the {@link Resource} properties (defaults to "no timeout")
      */
-    public long getCertificateRevocationListCheckTimeoutSeconds() {
-        return m_certificateRevocationListCheckTimeoutSeconds;
+    public Duration getRefreshTimeout() {
+        return m_refreshTimeout;
+    }
+
+    /**
+     * @return Command to run before refreshing resources.
+     */
+    public List<String> getRefreshCommand() {
+        return m_refreshCommand;
     }
 
     /**
@@ -146,11 +158,14 @@ public class EasySslProperties {
     public void setCertificateRevocationList(Resource certificateRevocationList) {
         m_certificateRevocationList = certificateRevocationList;
     }
-    public void setCertificateRevocationListCheckIntervalSeconds(long certificateRevocationListCheckIntervalSeconds) {
-        m_certificateRevocationListCheckIntervalSeconds = certificateRevocationListCheckIntervalSeconds;
+    public void setRefreshInterval(Duration refreshInterval) {
+        m_refreshInterval = refreshInterval;
     }
-    public void setCertificateRevocationListCheckTimeoutSeconds(long certificateRevocationListCheckTimeoutSeconds) {
-        m_certificateRevocationListCheckTimeoutSeconds = certificateRevocationListCheckTimeoutSeconds;
+    public void setRefreshTimeout(Duration refreshTimeout) {
+        m_refreshTimeout = refreshTimeout;
+    }
+    public void setRefreshCommand(List<String> refreshCommand) {
+        m_refreshCommand = refreshCommand;
     }
     public void setKey(Resource key) {
         m_key = key;

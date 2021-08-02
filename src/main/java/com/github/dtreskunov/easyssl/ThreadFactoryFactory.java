@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadFactory;
 public class ThreadFactoryFactory {
     /**
      * Creates a {@link ThreadFactory} that executes the runnable in a new thread
-     * @param daemon whether the factory will create "daemon" threads (i.e. those blocking JVM from exiting)
+     * @param daemon whether the factory will create "daemon" threads (i.e. those not blocking JVM from exiting)
      * @param name the name of the threads created by the factory
      */
     public static ThreadFactory createThreadFactory(boolean daemon, String name) {

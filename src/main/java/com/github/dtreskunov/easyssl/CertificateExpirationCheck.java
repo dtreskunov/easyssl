@@ -4,11 +4,11 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -58,10 +58,11 @@ public class CertificateExpirationCheck {
      * @param provenance added to the log message to help disambiguate which certificate is expiring
      * @param warningThreshold how far in advance of earliest expiration to do the initial check (null is equiv to zero)
      * @param interval delay between repeated checks after the initial delay (may be null to disable repeated checks)
+     * @return {@link ScheduledFuture} which may be null if {@code certificates} is null or empty
      */
-    public static void scheduleCheck(Certificate[] certificates, String provenance, Duration warningThreshold, Duration interval) {
+    public static ScheduledFuture<?> scheduleCheck(Certificate[] certificates, String provenance, Duration warningThreshold, Duration interval) {
         if (certificates == null || certificates.length == 0) {
-            return;
+            return null;
         }
         // this will throw an ArrayStoreException if any certificates are not X509Certificates, but this is quite a safe assumption
         X509Certificate[] x509Certificates = Arrays.copyOf(certificates, certificates.length, X509Certificate[].class);
@@ -76,10 +77,10 @@ public class CertificateExpirationCheck {
 
         if (interval == null) {
             LOG.trace("Scheduling local certificate expiration check with delay {} (not repeated)", initialDelay);
-            SCHEDULER.schedule(task, initialDelay.get(ChronoUnit.SECONDS), TimeUnit.SECONDS);
+            return SCHEDULER.schedule(task, initialDelay.getSeconds(), TimeUnit.SECONDS);
         } else {
             LOG.trace("Scheduling local certificate expiration check with delay {} (repeated with interval {})", initialDelay, interval);
-            SCHEDULER.scheduleAtFixedRate(task, initialDelay.get(ChronoUnit.SECONDS), interval.get(ChronoUnit.SECONDS), TimeUnit.SECONDS);
+            return SCHEDULER.scheduleAtFixedRate(task, initialDelay.getSeconds(), interval.getSeconds(), TimeUnit.SECONDS);
         }
     }
 }

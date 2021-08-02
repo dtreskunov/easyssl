@@ -3,6 +3,7 @@ package com.github.dtreskunov.easyssl;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.X509TrustManager;
@@ -38,6 +39,14 @@ public class ChainingTrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        return null;
+        List<X509Certificate> certificates = new ArrayList<>(2);
+        for (X509TrustManager delegate: delegates) {
+            X509Certificate[] delegateAccepts = delegate.getAcceptedIssuers();
+            if (delegateAccepts != null) {
+                certificates.addAll(Arrays.asList(delegateAccepts));
+            }
+        }
+        X509Certificate[] array = new X509Certificate[certificates.size()];
+        return certificates.toArray(array);
     }
 }
