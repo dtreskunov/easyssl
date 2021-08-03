@@ -43,6 +43,8 @@ import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.web.server.Ssl;
 import org.springframework.boot.web.server.SslStoreProvider;
@@ -101,7 +103,17 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     public EasySslHelper(EasySslProperties config) throws Exception {
         Assert.notNull(config, "config is null");
-        this.config = config;
+        if (AopUtils.isAopProxy(config)) {
+            // Because initialize() is called outside the "main" thread, there is a possibility that a not-fully live Spring proxy
+            // will deadlock due to a lock held in the "main" thread. I've seen an instance where calling getRefreshCommand() triggered
+            // the CGLIB proxy to call into Spring's findAutowireCandidates(), which called
+            // AbstractAutowireCapableBeanFactory.getSingletonFactoryBeanForTypeCheck(), which deadlocked on the mutex.
+            LOG.warn("EasySslProperties is an AOP proxy. To avoid possible deadlock, its properties will be copied into a new object.");
+            this.config = new EasySslProperties();
+            BeanUtils.copyProperties(config, this.config);
+        } else {
+            this.config = config;
+        }
 
         Scheduler.runAndSchedule(
             "Load EasySSL resources",
