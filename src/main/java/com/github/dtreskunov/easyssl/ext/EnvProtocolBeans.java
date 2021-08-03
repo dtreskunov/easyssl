@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl.spring;
+package com.github.dtreskunov.easyssl.ext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -12,8 +12,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
-import com.github.dtreskunov.easyssl.ProtocolResolverRegistrar;
-
 /**
  * Allows specifying Spring {@link Resource}s as literals from environment
  * variables. For example, {@code env:PRIVATE_KEY} will result in a resource
@@ -22,17 +20,35 @@ import com.github.dtreskunov.easyssl.ProtocolResolverRegistrar;
  * {@link IOException} is thrown).
  */
 @Configuration
-public class EnvResourceProtocol {
+public class EnvProtocolBeans {
 
-    public static class EnvironmentVariableResource extends AbstractResource {
+    @Bean
+    ProtocolResolverRegistrar envProtocolResolverRegistrar() {
+        return new ProtocolResolverRegistrar(new EnvProtocolResolver());
+    }
 
-        public static class EnvironmentVariableNotSetException extends IOException {
-            private static final long serialVersionUID = 1L;
+    static class EnvProtocolResolver implements ProtocolResolver {
+        public static final String ENV_PROTOCOL_PREFIX = "env:";
 
-            public EnvironmentVariableNotSetException(String message) {
-                super(message);
+        @Override
+        public Resource resolve(String location, ResourceLoader resourceLoader) {
+            if (!location.startsWith(ENV_PROTOCOL_PREFIX)) {
+                return null;
             }
+            String environmentVariableName = location.substring(ENV_PROTOCOL_PREFIX.length());
+            return new EnvironmentVariableResource(environmentVariableName);
         }
+    }
+
+    public static class EnvironmentVariableNotSetException extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        public EnvironmentVariableNotSetException(String message) {
+            super(message);
+        }
+    }
+
+    static class EnvironmentVariableResource extends AbstractResource {
 
         private final String m_name;
 
@@ -55,23 +71,4 @@ public class EnvResourceProtocol {
             return new ByteArrayInputStream(value.getBytes());
         }
     }
-
-    public static class Resolver implements ProtocolResolver {
-        public static final String ENV_PROTOCOL_PREFIX = "env:";
-
-        @Override
-        public Resource resolve(String location, ResourceLoader resourceLoader) {
-            if (!location.startsWith(ENV_PROTOCOL_PREFIX)) {
-                return null;
-            }
-            String environmentVariableName = location.substring(ENV_PROTOCOL_PREFIX.length());
-            return new EnvironmentVariableResource(environmentVariableName);
-        }
-    }
-
-    @Bean
-    public ProtocolResolverRegistrar registrar() {
-        return new ProtocolResolverRegistrar(new Resolver());
-    }
-
 }

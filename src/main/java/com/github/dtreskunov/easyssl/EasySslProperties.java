@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl.spring;
+package com.github.dtreskunov.easyssl;
 
 import java.time.Duration;
 import java.util.List;

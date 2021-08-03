@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CertificateExpirationCheck {
+class CertificateExpirationCheck {
     private static final Logger LOG = LoggerFactory.getLogger(CertificateExpirationCheck.class);
     private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(
         ThreadFactoryFactory.createThreadFactory(true, CertificateExpirationCheck.class.getSimpleName() + " daemon"));

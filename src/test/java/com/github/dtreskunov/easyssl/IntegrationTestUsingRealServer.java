@@ -15,8 +15,6 @@ import java.util.Arrays;
 import javax.net.ssl.SSLContext;
 
 import com.github.dtreskunov.easyssl.server.Server;
-import com.github.dtreskunov.easyssl.spring.EasySslBeans;
-import com.github.dtreskunov.easyssl.spring.EasySslProperties;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;

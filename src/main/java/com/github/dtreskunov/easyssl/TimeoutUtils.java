@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 /**
  * Utility class for putting a timeout on execution of arbitrary code
  */
-public class TimeoutUtils {
+class TimeoutUtils {
 
     public static class Builder {
         private String m_name = TimeoutUtils.class.getSimpleName();

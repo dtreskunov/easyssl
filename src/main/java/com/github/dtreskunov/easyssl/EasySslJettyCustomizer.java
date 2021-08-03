@@ -13,7 +13,7 @@ import org.springframework.boot.web.embedded.jetty.ConfigurableJettyWebServerFac
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationListener;
 
-public class EasySslJettyCustomizer implements WebServerFactoryCustomizer<ConfigurableJettyWebServerFactory>, ApplicationListener<EasySslHelper.SSLContextReinitializedEvent> {
+class EasySslJettyCustomizer implements WebServerFactoryCustomizer<ConfigurableJettyWebServerFactory>, ApplicationListener<EasySslHelper.SSLContextReinitializedEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(EasySslJettyCustomizer.class);
     private final SetOnlyOnce<SslContextFactory> contextFactory = new SetOnlyOnce<>();
 

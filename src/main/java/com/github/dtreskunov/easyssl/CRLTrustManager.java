@@ -27,7 +27,7 @@ import org.springframework.util.Assert;
  * {@link Resource#lastModified() last modified} timestamp and is refreshed accordingly. The signature on the CRL is verified against
  * some of provided {@link PublicKey}s (there may be several CAs).
  */
-public class CRLTrustManager implements X509TrustManager {
+class CRLTrustManager implements X509TrustManager {
     private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
 
     private final X509CRL m_crl;

@@ -15,7 +15,7 @@ import org.springframework.util.ReflectionUtils;
 import io.undertow.Undertow;
 import io.undertow.Undertow.ListenerInfo;
 
-public class EasySslUndertowCustomizer implements ApplicationListener<ApplicationEvent> {
+class EasySslUndertowCustomizer implements ApplicationListener<ApplicationEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(EasySslUndertowCustomizer.class);
     private final SetOnlyOnce<ListenerInfo> httpsListenerInfo = new SetOnlyOnce<>();
 

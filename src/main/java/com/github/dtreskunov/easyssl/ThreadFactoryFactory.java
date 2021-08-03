@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Very enterprise. Much Java.
  */
-public class ThreadFactoryFactory {
+class ThreadFactoryFactory {
     /**
      * Creates a {@link ThreadFactory} that executes the runnable in a new thread
      * @param daemon whether the factory will create "daemon" threads (i.e. those not blocking JVM from exiting)
