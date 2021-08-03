@@ -104,13 +104,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>1.0.4</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:1.0.4')
+compile('com.github.dtreskunov:easyssl:2.0.0')
 ```
 
 Next, add the following section to `application.yml`:
@@ -169,7 +169,7 @@ server.ssl:
 #   easyssl.key to "env:EASYSSL_KEY". Properties coming from environment variables override those from application.yml.
 ```
 
-Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Look at the
+Next, ensure that the  `com.github.dtreskunov.easyssl` package is getting scanned by Spring. Take a look at the
 [server code](https://github.com/dtreskunov/easyssl/tree/master/src/test/java/com/github/dtreskunov/easyssl/server)
 used by this project's integration tests.
 
@@ -196,6 +196,21 @@ private String protocol; // injected by EasySSL
 curl --cacert ca-cert.pem --cert client-cert.pem --key client-key.pem -i https://localhost:8443/
 ```
 
+
+# Handling certificate renewal
+EasySSL will refresh file-like resources mentioned in `application.yml` periodically, as configured by `refreshInterval`,
+`refreshTimeout`, and `refreshCommand` settings. Calling a small script via the `refreshCommand` setting makes it possible
+to automate certificate renewal. [Hashicorp Vault](https://www.vaultproject.io/docs) with
+[PKI engine](https://www.vaultproject.io/docs/secrets/pki) is a capable CA that is very well suited for the role of a private
+certificate authority. Of course, you still need to somehow authenticate yourself to the Vault server!
+
+# Custom resource protocols
+One useful trick to keep in mind is Spring's `Resource` abstraction. This is what allows you to use `file:` and `classpath:`
+prefixes in `application.yml`. By default, EasySSL adds support for the `env:` protocol, which allows reading the contents
+of a `Resource` from an environment variable. It's possible to add a more suitable protocol depending on your infrastructure
+needs (for example, to access [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/)).
+
 # Links
 * [X.509 Authentication in Spring Security](http://www.baeldung.com/x-509-authentication-in-spring-security)
 * [Java 2-way TLS/SSL](http://blog.palominolabs.com/2011/10/18/java-2-way-tlsssl-client-certificates-and-pkcs12-vs-jks-keystores/)
+* [Tomcat Native / OpenSSL in Spring Boot 2.0](https://medium.com/@crueda/tomcat-native-openssl-in-spring-boot-2-0-a341ad07471d)
