@@ -5,9 +5,6 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import com.github.dtreskunov.easyssl.spring.EasySslBeans;
-import com.github.dtreskunov.easyssl.spring.EasySslProperties;
-
 public class FileFormatTests {
 
     /**

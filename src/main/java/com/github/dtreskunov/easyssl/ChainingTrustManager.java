@@ -14,7 +14,7 @@ import org.springframework.util.Assert;
  * Delegates certificate checking to 0 or more {@link X509TrustManager}s, stopping after first exception.
  * {@link #getAcceptedIssuers()} returns {@code null}.
  */
-public class ChainingTrustManager implements X509TrustManager {
+class ChainingTrustManager implements X509TrustManager {
 
     private final List<X509TrustManager> delegates;
 

@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl;
+package com.github.dtreskunov.easyssl.ext;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -21,13 +21,14 @@ import org.springframework.util.Assert;
  * org.springframework.context.support.PostProcessorRegistrationDelegate#registerBeanPostProcessors
  * registerBeanPostProcessors}.
  */
-public class ProtocolResolverRegistrar implements ApplicationContextAware, BeanPostProcessor {
+class ProtocolResolverRegistrar implements ApplicationContextAware, BeanPostProcessor {
     private final ProtocolResolver m_resolver;
 
     public ProtocolResolverRegistrar(ProtocolResolver resolver) {
         Assert.notNull(resolver, "resolver cannot be null");
         m_resolver = resolver;
     }
+    
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         ((ConfigurableApplicationContext)applicationContext).addProtocolResolver(m_resolver);

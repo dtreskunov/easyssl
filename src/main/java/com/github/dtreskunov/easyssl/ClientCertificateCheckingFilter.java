@@ -29,7 +29,7 @@ import org.springframework.web.filter.GenericFilterBean;
  * see <a href="https://github.com/spring-projects/spring-boot/issues/6171">SPRING-BOOT 6171</a>. This means that connections
  * from revoked clients will still be accepted by the server, however, request handler logic won't be reached.
  */
-public class ClientCertificateCheckingFilter extends GenericFilterBean {
+class ClientCertificateCheckingFilter extends GenericFilterBean {
 
     private static final String REQUEST_ATTRIBUTE_X509_CERTIFICATE = "javax.servlet.request.X509Certificate";
     private final Logger m_log = LoggerFactory.getLogger(getClass());

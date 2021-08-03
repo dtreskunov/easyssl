@@ -17,7 +17,7 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationListener;
 import org.springframework.util.ReflectionUtils;
 
-public class EasySslTomcatCustomizer implements WebServerFactoryCustomizer<ConfigurableTomcatWebServerFactory>, ApplicationListener<EasySslHelper.SSLContextReinitializedEvent> {
+class EasySslTomcatCustomizer implements WebServerFactoryCustomizer<ConfigurableTomcatWebServerFactory>, ApplicationListener<EasySslHelper.SSLContextReinitializedEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(EasySslTomcatCustomizer.class);
     private final SetOnlyOnce<AbstractJsseEndpoint<?,?>> endpoint = new SetOnlyOnce<>();
 

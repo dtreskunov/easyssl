@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl.spring;
+package com.github.dtreskunov.easyssl;
 
 import java.security.Security;
 import java.util.HashMap;
@@ -6,12 +6,6 @@ import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.servlet.Filter;
-
-import com.github.dtreskunov.easyssl.ClientCertificateCheckingFilter;
-import com.github.dtreskunov.easyssl.EasySslHelper;
-import com.github.dtreskunov.easyssl.EasySslJettyCustomizer;
-import com.github.dtreskunov.easyssl.EasySslTomcatCustomizer;
-import com.github.dtreskunov.easyssl.EasySslUndertowCustomizer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

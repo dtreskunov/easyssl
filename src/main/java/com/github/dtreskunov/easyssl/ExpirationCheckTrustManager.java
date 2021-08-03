@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
   * Logs an error or a warning when any certificate in the chain has expired or is close to expiring.
   * Actually rejecting expired certificates is handled elsewhere. 
  */
-public class ExpirationCheckTrustManager implements X509TrustManager {
+class ExpirationCheckTrustManager implements X509TrustManager {
     private Duration warningThreshold;
 
     public ExpirationCheckTrustManager(Duration warningThreshold) {
