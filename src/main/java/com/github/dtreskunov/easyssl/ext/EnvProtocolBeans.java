@@ -1,16 +1,13 @@
 package com.github.dtreskunov.easyssl.ext;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.Assert;
 
 /**
  * Allows specifying Spring {@link Resource}s as literals from environment
@@ -40,35 +37,15 @@ public class EnvProtocolBeans {
         }
     }
 
-    public static class EnvironmentVariableNotSetException extends IOException {
-        private static final long serialVersionUID = 1L;
-
-        public EnvironmentVariableNotSetException(String message) {
-            super(message);
-        }
-    }
-
-    static class EnvironmentVariableResource extends AbstractResource {
-
-        private final String m_name;
+    static class EnvironmentVariableResource extends AbstractNamedResource {
 
         public EnvironmentVariableResource(String name) {
-            Assert.notNull(name, "name cannot be null");
-            m_name = name;
+            super(name);
         }
 
         @Override
-        public String getDescription() {
-            return "Contents of environment variable " + m_name;
-        }
-
-        @Override
-        public InputStream getInputStream() throws IOException {
-            String value = System.getenv(m_name);
-            if (value == null) {
-                throw new EnvironmentVariableNotSetException(m_name);
-            }
-            return new ByteArrayInputStream(value.getBytes());
+        String getValue(String name) {
+            return System.getenv(name);
         }
     }
 }
