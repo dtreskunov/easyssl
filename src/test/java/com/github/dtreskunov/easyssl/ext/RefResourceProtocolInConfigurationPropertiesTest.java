@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl;
+package com.github.dtreskunov.easyssl.ext;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -7,11 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import com.github.dtreskunov.easyssl.ext.EnvProtocolBeans;
-import com.github.dtreskunov.easyssl.ext.EnvProtocolBeans.EnvironmentVariableNotSetException;
-
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.SetEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,11 +18,15 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
-@SpringBootTest(properties = {"happy=env:HAPPY", "sad=env:SAD"}, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class EnvResourceProtocolInConfigurationPropertiesTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
+    "message=test message",
+    "happy=ref:message",
+    "sad=ref:missingProperty"
+})
+public class RefResourceProtocolInConfigurationPropertiesTest {
     @Configuration
     @EnableConfigurationProperties
-    @Import(EnvProtocolBeans.class)
+    @Import(RefProtocolBeans.class)
     public static class TestConfig {
         @ConfigurationProperties
         @Component
@@ -52,16 +52,15 @@ public class EnvResourceProtocolInConfigurationPropertiesTest {
     private TestConfig.Properties properties;
 
     @Test
-    @SetEnvironmentVariable(key = "HAPPY", value = "happy")
     public void testHappy() throws IOException {
         assertThat(
                 StreamUtils.copyToString(properties.getHappy().getInputStream(), Charset.defaultCharset()),
-                is("happy"));
+                is("test message"));
     }
 
     @Test
-    public void testSad() throws IOException {
-        assertThrows(EnvironmentVariableNotSetException.class, () ->
+    public void testSad() {
+        assertThrows(IOException.class, () ->
             properties.getSad().getInputStream());
     }
 }

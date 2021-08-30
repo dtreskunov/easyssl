@@ -1,4 +1,4 @@
-package com.github.dtreskunov.easyssl;
+package com.github.dtreskunov.easyssl.ext;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-
-import com.github.dtreskunov.easyssl.ext.EnvProtocolBeans;
-import com.github.dtreskunov.easyssl.ext.EnvProtocolBeans.EnvironmentVariableNotSetException;
 
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.SetEnvironmentVariable;
@@ -44,8 +41,8 @@ public class EnvResourceProtocolTest {
     }
 
     @Test
-    public void testSad() throws IOException {
-        assertThrows(EnvironmentVariableNotSetException.class, () ->
+    public void testSad() {
+        assertThrows(IOException.class, () ->
             resource.getInputStream());
     }
 }
