@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/dtreskunov/easyssl.svg?branch=master)](https://travis-ci.org/dtreskunov/easyssl)
+[![Build Status](https://app.travis-ci.com/dtreskunov/easyssl.svg?branch=master)](https://app.travis-ci.com/github/dtreskunov/easyssl)
 # EasySSL
 EasySSL is a small library to help create Spring Boot applications that talk to each other over HTTPS
 with mutual, or two-way authentication. There is a central Certificate Authority (CA). Each app has its own
@@ -104,13 +104,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:2.0.0')
+compile('com.github.dtreskunov:easyssl:2.1.0')
 ```
 
 Next, add the following section to `application.yml`:
