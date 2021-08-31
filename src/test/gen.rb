@@ -146,6 +146,7 @@ entities = {}
   Entity.initialize(name: 'ECEncryptedOpenSsl', dn: '/CN=ECEncryptedOpenSsl',             ca_name: 'ca', key_pass: 'ECEncryptedOpenSsl'),
   Entity.initialize(name: 'ECPlainPKCS8',       dn: '/CN=ECPlainPKCS8',                   ca_name: 'ca', key_pkcs8: true),
   Entity.initialize(name: 'ECPlainOpenSsl',     dn: '/CN=ECPlainOpenSsl',                 ca_name: 'ca'),
+  Entity.initialize(name: 'iss_by_another_ca',  dn: '/OU=iss_by_another_ca/CN=localhost', ca_name: 'another_ca'),
 ].each do |entity|
   entity.gen
   entities[entity.name] = entity
@@ -153,3 +154,14 @@ end
 
 entities['ca'].revoke('revoked_localhost')
 entities['ca'].gen_crl
+
+# create a PEM file containing ca/cert.pem and another_ca/cert.pem, concatenated together with some comments inbetween
+File.open('cacerts.pem', 'w') do |cacerts|
+  ['ca', 'another_ca'].each do |ca_name|
+    ca = entities[ca_name]
+    cacerts.puts("# #{ca.cert}")
+    File.open(ca.cert, 'r') do |cacert|
+      cacerts.write(cacert.read)
+    end
+  end
+end

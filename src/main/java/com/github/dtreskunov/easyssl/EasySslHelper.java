@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -61,6 +63,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
     private static final String KEY_ALIAS = "easyssl-key";
+    private static final Pattern PEM_CERTIFICATE = Pattern.compile("-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", Pattern.DOTALL);
 
     public static class SSLContextReinitializedEvent extends ApplicationEvent {
         private EasySslHelper helper;
@@ -207,9 +210,10 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         // if several certs are concatenated together OpenSSL-style, this will only load the first one!
         // cf.generateCertificate(certificate.getInputStream());
-        String[] pems = StreamUtils.copyToString(certificate.getInputStream(), StandardCharsets.UTF_8).split("(?=-----BEGIN CERTIFICATE-----)");
-        ArrayList<Certificate> certs = new ArrayList<>(pems.length);
-        for (String pem: pems) {
+        Matcher matcher = PEM_CERTIFICATE.matcher(StreamUtils.copyToString(certificate.getInputStream(), StandardCharsets.UTF_8));
+        ArrayList<Certificate> certs = new ArrayList<>(1);
+        while (matcher.find()) {
+            String pem = matcher.group();
             certs.add(cf.generateCertificate(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8))));
         }
         return certs;
@@ -306,15 +310,15 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     }
 
     private static KeyStore getTrustStore(Collection<Resource> certificates) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null, null);
 
         int index = 0;
         for (Resource certificate: certificates) {
-            Certificate ca = cf.generateCertificate(certificate.getInputStream());
-            trustStore.setCertificateEntry("easyssl-ca-" + index, ca);
-            index++;
+            for (Certificate ca: getCertificates(certificate)) {
+                trustStore.setCertificateEntry("easyssl-ca-" + index, ca);
+                index++;
+            }
         }
 
         return trustStore;
