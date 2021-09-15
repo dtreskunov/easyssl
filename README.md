@@ -104,13 +104,13 @@ Maven:
 <dependency>
   <groupId>com.github.dtreskunov<groupId>
   <artifactId>easyssl</artifactId>
-  <version>2.1.1</version>
+  <version>2.1.2</version>
 </dependency>
 ```
 
 Gradle:
 ```groovy
-compile('com.github.dtreskunov:easyssl:2.1.1')
+compile('com.github.dtreskunov:easyssl:2.1.2')
 ```
 
 Next, add the following section to `application.yml`:
@@ -209,6 +209,10 @@ One useful trick to keep in mind is Spring's `Resource` abstraction. This is wha
 prefixes in `application.yml`. By default, EasySSL adds support for the `env:` protocol, which allows reading the contents
 of a `Resource` from an environment variable. It's possible to add a more suitable protocol depending on your infrastructure
 needs (for example, to access [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/)).
+
+# FIPS-140 compliance
+By default, EasySSL will use the [FIPS-compliant](https://en.wikipedia.org/wiki/FIPS_140) variant of the BouncyCastle library.
+If your project requires regular BouncyCastle, exclude the `bcpkix-fips` dependency and add `bcpkix-jdk15on`.
 
 # Links
 * [X.509 Authentication in Spring Security](http://www.baeldung.com/x-509-authentication-in-spring-security)
