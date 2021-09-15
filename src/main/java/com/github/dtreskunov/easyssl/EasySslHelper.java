@@ -174,11 +174,11 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         try {
             addSecurityProvider("BCFIPS", "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider");
         } catch (Exception e1) {
-            LOG.debug("BouncyCastleFipsProvider could not be added", e1);
+            LOG.debug("BouncyCastleFipsProvider could not be added");
             try {
                 addSecurityProvider("BC", "org.bouncycastle.jce.provider.BouncyCastleProvider");
             } catch (Exception e2) {
-                LOG.error("BouncyCastleProvider could not be added, giving up", e2);
+                LOG.error("Neither BouncyCastleFipsProvider nor BouncyCastleProvider could not be added");
                 throw new RuntimeException(e2);
             }
         }
