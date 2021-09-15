@@ -12,8 +12,10 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -158,12 +160,37 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         return sslStoreProvider;
     }
 
+    private static void addSecurityProvider(String declaredName, String className) throws Exception {
+        Provider provider = Security.getProvider(declaredName);
+        if (provider != null) {
+            return;
+        }
+        provider = (Provider) Class.forName(className).getDeclaredConstructor().newInstance();
+        Security.addProvider(provider);
+        LOG.info("Security Provider added: {}", provider.getInfo());
+    }
+
+    private static void addBouncyCastleSecurityProvider() {
+        try {
+            addSecurityProvider("BCFIPS", "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider");
+        } catch (Exception e1) {
+            LOG.debug("BouncyCastleFipsProvider could not be added");
+            try {
+                addSecurityProvider("BC", "org.bouncycastle.jce.provider.BouncyCastleProvider");
+            } catch (Exception e2) {
+                LOG.error("Neither BouncyCastleFipsProvider nor BouncyCastleProvider could not be added");
+                throw new RuntimeException(e2);
+            }
+        }
+    }
+
     private void initialize() {
         LOG.info("{} EasySSL with command {}, certificate from {}, key from {}, CA from {}, and CRL from {} with timeout {} (disabled if zero). Next update in {} (disabled if zero)",
             initialized ? "Reinitializing" : "Initializing", config.getRefreshCommand(),
             config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
             config.getRefreshTimeout(), config.getRefreshInterval());
         try {
+            addBouncyCastleSecurityProvider();
             if (config.getRefreshCommand() != null) {
                 LOG.info("Refresh command: {}", config.getRefreshCommand());
                 Process refreshProcess = Runtime.getRuntime().exec(
@@ -228,7 +255,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
             throw new KeyException("No object was extracted from the input stream by the PEM parser");
         }
 
-        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
         final PEMKeyPair pemKeyPair;
         final KeyPair keyPair;
         if (pemObject instanceof PEMEncryptedKeyPair) {
