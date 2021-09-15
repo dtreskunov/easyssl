@@ -15,24 +15,49 @@ jobs:
     - stage: test
       env:
         - ORG_GRADLE_PROJECT_servletContainer=tomcat
+        - ORG_GRADLE_PROJECT_fips=false
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
+    - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=tomcat
+        - ORG_GRADLE_PROJECT_fips=true
       script:
         - ./gradlew dependencies
         - ./gradlew check
     - stage: test
       env:
         - ORG_GRADLE_PROJECT_servletContainer=jetty
+        - ORG_GRADLE_PROJECT_fips=false
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
+    - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=jetty
+        - ORG_GRADLE_PROJECT_fips=true
       script:
         - ./gradlew dependencies
         - ./gradlew check
     - stage: test
       env:
         - ORG_GRADLE_PROJECT_servletContainer=undertow
+        - ORG_GRADLE_PROJECT_fips=false
+      script:
+        - ./gradlew dependencies
+        - ./gradlew check
+    - stage: test
+      env:
+        - ORG_GRADLE_PROJECT_servletContainer=undertow
+        - ORG_GRADLE_PROJECT_fips=true
       script:
         - ./gradlew dependencies
         - ./gradlew check
     - stage: deploy
       env:
         - ORG_GRADLE_PROJECT_servletContainer=tomcat
+        - ORG_GRADLE_PROJECT_fips=true
       script:
         - ./gradlew dependencies
         - |

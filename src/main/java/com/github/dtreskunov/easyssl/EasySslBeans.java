@@ -1,6 +1,5 @@
 package com.github.dtreskunov.easyssl;
 
-import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,10 +47,6 @@ public class EasySslBeans {
     @ConditionalOnWebApplication
     @ConditionalOnProperty(value = "easyssl.serverCustomizationEnabled", matchIfMissing = true)
     public static @interface ConditionalOnServerCustomizationEnabled {}
-
-    static {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-    }
 
     /**
      * Only used by test code
