@@ -19,6 +19,7 @@ import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -122,7 +123,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
         Scheduler.runAndSchedule(
             "Load EasySSL resources",
-            config.getRefreshTimeout().toMillis(), config.getRefreshInterval().toMillis(), TimeUnit.MILLISECONDS,
+            getMillis(config.getRefreshTimeout()), getMillis(config.getRefreshInterval()), TimeUnit.MILLISECONDS,
             this::initialize);
         
         Assert.isTrue(initialized, "initialized was expected to be true");
@@ -158,6 +159,10 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     synchronized public SslStoreProvider getSslStoreProvider() {
         return sslStoreProvider;
+    }
+
+    private static long getMillis(Duration nullable) {
+        return nullable == null ? 0 : nullable.toMillis();
     }
 
     private static void addSecurityProvider(String declaredName, String className) throws Exception {
