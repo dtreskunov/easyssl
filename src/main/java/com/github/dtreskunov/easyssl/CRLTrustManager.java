@@ -1,23 +1,18 @@
 package com.github.dtreskunov.easyssl;
 
 import java.security.PublicKey;
-import java.security.SignatureException;
 import java.security.cert.CRLReason;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 
 import javax.net.ssl.X509TrustManager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
@@ -28,29 +23,11 @@ import org.springframework.util.Assert;
  * some of provided {@link PublicKey}s (there may be several CAs).
  */
 class CRLTrustManager implements X509TrustManager {
-    private static final Logger LOG = LoggerFactory.getLogger(CRLTrustManager.class);
-
     private final X509CRL m_crl;
 
-    public CRLTrustManager(Resource crlResource, Collection<PublicKey> publicKeys) throws Exception {
-        Assert.notNull(crlResource, "crlResource may not be null");
-        Assert.notNull(publicKeys, "publicKeys may not be null");
-        m_crl = loadCRL(crlResource, publicKeys);
-    }
-
-    private static X509CRL loadCRL(Resource resource, Collection<PublicKey> publicKeys) throws Exception {
-        X509CRL crl = (X509CRL) CertificateFactory.getInstance("X.509").generateCRL(resource.getInputStream());
-        for (PublicKey publicKey: publicKeys) {
-            try {
-                crl.verify(publicKey);
-                LOG.info("Loaded CRL from {}", resource);
-                return crl;
-            } catch (Exception e) {
-                LOG.debug("Unable to verify CRL from {} against a public key {} due to {}", resource, publicKey, e.toString());
-                continue;
-            }
-        }
-        throw new SignatureException("Unable to verify CRL against any provided public keys");
+    CRLTrustManager(X509CRL crl) throws Exception {
+        Assert.notNull(crl, "crl may not be null");
+        m_crl = crl;
     }
 
     @Override
