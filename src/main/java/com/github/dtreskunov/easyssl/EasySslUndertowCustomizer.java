@@ -29,6 +29,10 @@ class EasySslUndertowCustomizer implements ApplicationListener<ApplicationEvent>
     }
 
     private void onWebServerInitializedEvent(WebServerInitializedEvent event) {
+        if (!(event.getWebServer() instanceof UndertowWebServer)) {
+            LOG.warn("Undertow isn't being used - remove it from classpath if not using");
+            return;
+        }
         UndertowWebServer server = (UndertowWebServer) event.getWebServer();
         Field UndertowWebServer_undertow = ReflectionUtils.findField(UndertowWebServer.class, "undertow");
         ReflectionUtils.makeAccessible(UndertowWebServer_undertow);
@@ -41,6 +45,10 @@ class EasySslUndertowCustomizer implements ApplicationListener<ApplicationEvent>
     }
 
     private void onSSLContextReinitializedEvent(SSLContextReinitializedEvent event) {
+        if (!httpsListenerInfo.isSet()) {
+            LOG.warn("Undertow hasn't been configured yet - remove it from classpath if not using");
+            return;
+        }
         LOG.info("Updating Undertow with new SSLContext");
         httpsListenerInfo.get().setSslContext(event.getHelper().getSSLContext());
     }
