@@ -3,8 +3,7 @@ logging.level.com.github.dtreskunov.easyssl: TRACE
 
 easyssl:
   caCertificate:
-  - file:src/test/resources/ssl/another_ca/cert.pem
-  - file:src/test/resources/ssl/ca/cert.pem
+  - file:src/test/resources/ssl/cacerts.pem
   certificate: file:src/test/resources/ssl/localhost1/cert_chain.pem
   key: file:src/test/resources/ssl/localhost1/key.pem
   keyPassword: localhost-password

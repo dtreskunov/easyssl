@@ -1,5 +1,0 @@
-easyssl:
-  caCertificate:
-  - file:src/test/resources/ssl/cacerts.pem
-  certificate: file:src/test/resources/ssl/iss_by_another_ca/cert_chain.pem
-  key: file:src/test/resources/ssl/iss_by_another_ca/key.pem
