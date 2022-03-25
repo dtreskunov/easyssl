@@ -88,6 +88,9 @@ test {
   }
   // https://junit-pioneer.org/docs/environment-variables/#warnings-for-reflective-access
   jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+  filter {
+    excludeTestsMatching '*IntegrationTestUsingRealServerAnotherCA*'
+  }
 }
 
 //disable javadoc doclint for Java8
