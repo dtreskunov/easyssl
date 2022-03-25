@@ -24,6 +24,10 @@ class EasySslJettyCustomizer implements WebServerFactoryCustomizer<ConfigurableJ
 
     @Override
     public void onApplicationEvent(SSLContextReinitializedEvent event) {
+        if (!contextFactory.isSet()) {
+            LOG.warn("Jetty hasn't been configured yet - remove it from classpath if not using");
+            return;
+        }
         LOG.info("Updating Jetty with new SSLContext");
         contextFactory.get().setKeyStore(event.getHelper().getKeyStore());
         contextFactory.get().setTrustStore(event.getHelper().getTrustStore());

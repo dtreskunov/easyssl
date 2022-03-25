@@ -17,4 +17,8 @@ class SetOnlyOnce<T> {
         }
         return value;
     }
+
+    public boolean isSet() {
+        return value != null;
+    }
 }

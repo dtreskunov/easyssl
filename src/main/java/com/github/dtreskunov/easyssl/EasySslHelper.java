@@ -2,7 +2,6 @@ package com.github.dtreskunov.easyssl;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -16,12 +15,15 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -100,6 +102,10 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     private final SSLContext sslContext = SSLContext.getInstance("TLS");
     private KeyStore keyStore;
     private KeyStore trustStore;
+    private List<X509Certificate> caCertificates;
+    private X509CRL crl;
+    private PrivateKey privateKey;
+    private List<X509Certificate> certificateChain;
     private X509TrustManager trustManager;
     private final SslStoreProvider sslStoreProvider = new SslStoreProviderImpl();
     private boolean initialized;
@@ -151,6 +157,22 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     synchronized public KeyStore getTrustStore() {
         return trustStore;
+    }
+
+    synchronized public List<X509Certificate> getCACertificates() {
+        return Collections.unmodifiableList(caCertificates);
+    }
+    
+    synchronized public X509CRL getCRL() {
+        return crl;
+    }
+
+    synchronized public List<X509Certificate> getCertificateChain() {
+        return Collections.unmodifiableList(certificateChain);
+    }
+
+    synchronized public PrivateKey getPrivateKey() {
+        return privateKey;
     }
 
     synchronized public X509TrustManager getTrustManager() {
@@ -211,9 +233,21 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
                     throw new RuntimeException("Refresh command exited with exit code " + refreshProcessExitCode);
                 }
             }
-            trustStore = getTrustStore(config.getCaCertificate());
-            trustManager = getTrustManager(config, trustStore);
-            keyStore = getKeyStore(config.getCertificate(), config.getKey(), config.getKeyPassword());
+            caCertificates = new ArrayList<>(config.getCaCertificate().size());
+            for (Resource c: config.getCaCertificate()) {
+                caCertificates.addAll(readX509Certificates(c));
+            }
+            if (config.getCertificateRevocationList() == null) {
+                crl = null;
+            } else {
+                crl = readCRL(config.getCertificateRevocationList(), caCertificates);
+            }
+            trustStore = getTrustStore(caCertificates);
+            trustManager = getTrustManager(config.getCertificateExpirationWarningThreshold(), crl, trustStore);
+
+            privateKey = readPrivateKey(config.getKey(), config.getKeyPassword());
+            certificateChain = readX509Certificates(config.getCertificate());
+            keyStore = getKeyStore(certificateChain, privateKey);
             if (localCertificateExpirationCheck != null) {
                 localCertificateExpirationCheck.cancel(false);
             }
@@ -238,22 +272,41 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         initialized = true;
     }
 
-    private static List<Certificate> getCertificates(Resource certificate) throws Exception {
+    private static List<X509Certificate> readX509Certificates(Resource certificate) throws Exception {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         // if several certs are concatenated together OpenSSL-style, this will only load the first one!
         // cf.generateCertificate(certificate.getInputStream());
         Matcher matcher = PEM_CERTIFICATE.matcher(StreamUtils.copyToString(certificate.getInputStream(), StandardCharsets.UTF_8));
-        ArrayList<Certificate> certs = new ArrayList<>(1);
+        ArrayList<X509Certificate> certs = new ArrayList<>(1);
         while (matcher.find()) {
             String pem = matcher.group();
-            certs.add(cf.generateCertificate(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8))));
+            certs.add((X509Certificate) cf.generateCertificate(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8))));
         }
         return certs;
     }
 
-    private static PrivateKey getPrivateKey(InputStream inputStream, String keyPassword) throws Exception {
+    private static X509CRL readCRL(Resource resource, Collection<X509Certificate> caCertificates) throws Exception {
+        ArrayList<PublicKey> publicKeys = new ArrayList<>(caCertificates.size());
+        for (X509Certificate c: caCertificates) {
+            publicKeys.add(c.getPublicKey());
+        }
+        X509CRL crl = (X509CRL) CertificateFactory.getInstance("X.509").generateCRL(resource.getInputStream());
+        for (PublicKey publicKey: publicKeys) {
+            try {
+                crl.verify(publicKey);
+                LOG.info("Loaded CRL from {}", resource);
+                return crl;
+            } catch (Exception e) {
+                LOG.debug("Unable to verify CRL from {} against a public key {} due to {}", resource, publicKey, e.toString());
+                continue;
+            }
+        }
+        throw new SignatureException("Unable to verify CRL against any provided public keys");
+    }
+
+    private static PrivateKey readPrivateKey(Resource privateKey, String keyPassword) throws Exception {
         final Object pemObject;
-        try (PEMParser pemParser = new PEMParser(new InputStreamReader(inputStream, Charset.defaultCharset()))) {
+        try (PEMParser pemParser = new PEMParser(new InputStreamReader(privateKey.getInputStream(), Charset.defaultCharset()))) {
             pemObject = pemParser.readObject();
         }
         if (pemObject == null) {
@@ -287,23 +340,17 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         return keyPair.getPrivate();
     }
 
-    private static X509TrustManager getTrustManager(EasySslProperties config, KeyStore trustStore) throws Exception {
+    private static X509TrustManager getTrustManager(Duration certificateExpirationWarningThreshold, X509CRL crl, KeyStore trustStore) throws Exception {
         List<X509TrustManager> delegates = new ArrayList<>(3);
 
         // 1: log a warning if a certificate is about to expire
-        if (config.getCertificateExpirationWarningThreshold() != null) {
-            delegates.add(new ExpirationCheckTrustManager(config.getCertificateExpirationWarningThreshold()));
+        if (certificateExpirationWarningThreshold != null) {
+            delegates.add(new ExpirationCheckTrustManager(certificateExpirationWarningThreshold));
         }
         
         // 2: reject revoked certificates
-        if (config.getCertificateRevocationList() != null) {
-            ArrayList<PublicKey> publicKeys = new ArrayList<>(config.getCaCertificate().size());
-            for (Resource r: config.getCaCertificate()) {
-                for (Certificate c: getCertificates(r)) {
-                    publicKeys.add(c.getPublicKey());
-                }
-            }
-            delegates.add(new CRLTrustManager(config.getCertificateRevocationList(), publicKeys));
+        if (crl != null) {
+            delegates.add(new CRLTrustManager(crl));
         }
 
         // 3: validate that the certificate is signed by a trusted CA
@@ -325,13 +372,10 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         return new ChainingTrustManager(delegates);
     }
 
-    private static KeyStore getKeyStore(Resource certificate, Resource key, String keyPassword) throws Exception {
-        PrivateKey privateKey = getPrivateKey(key.getInputStream(), keyPassword);
-        List<Certificate> certs = getCertificates(certificate);
-
+    private static KeyStore getKeyStore(List<X509Certificate> certificateChain, PrivateKey privateKey) throws Exception {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
-        keyStore.setKeyEntry(KEY_ALIAS, privateKey, KEY_PASSWORD.toCharArray(), certs.toArray(new Certificate[certs.size()]));
+        keyStore.setKeyEntry(KEY_ALIAS, privateKey, KEY_PASSWORD.toCharArray(), certificateChain.toArray(new X509Certificate[certificateChain.size()]));
         return keyStore;
     }
 
@@ -341,16 +385,14 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         return factory.getKeyManagers();
     }
 
-    private static KeyStore getTrustStore(Collection<Resource> certificates) throws Exception {
+    private static KeyStore getTrustStore(Collection<X509Certificate> certificates) throws Exception {
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null, null);
 
         int index = 0;
-        for (Resource certificate: certificates) {
-            for (Certificate ca: getCertificates(certificate)) {
-                trustStore.setCertificateEntry("easyssl-ca-" + index, ca);
-                index++;
-            }
+        for (X509Certificate ca: certificates) {
+            trustStore.setCertificateEntry("easyssl-ca-" + index, ca);
+            index++;
         }
 
         return trustStore;
