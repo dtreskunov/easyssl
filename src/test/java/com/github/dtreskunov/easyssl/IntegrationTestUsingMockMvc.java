@@ -1,5 +1,10 @@
 package com.github.dtreskunov.easyssl;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+
+import com.github.dtreskunov.easyssl.server.Server;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,14 +14,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import com.github.dtreskunov.easyssl.server.Server;
-
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class})
 @AutoConfigureMockMvc
 public class IntegrationTestUsingMockMvc {
 
     @Autowired
     private MockMvc mvc;
+
+    @Test
+    public void sanity(@Autowired EasySslBeans beans, @Autowired EasySslProperties config) {
+        assertThat(beans, notNullValue());
+        assertThat(config, notNullValue());
+    }
 
     @Test
     public void protectedEndpoint_forbidden() throws Exception {
