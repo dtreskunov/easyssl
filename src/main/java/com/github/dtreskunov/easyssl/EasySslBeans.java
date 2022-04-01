@@ -58,12 +58,6 @@ public class EasySslBeans {
 
     @Bean
     @ConditionalOnEnabled
-    public EasySslProperties easySslProperties() {
-        return new EasySslProperties();
-    }
-
-    @Bean
-    @ConditionalOnEnabled
     public EasySslHelper easySslHelper(EasySslProperties config) throws Exception {
         return new EasySslHelper(config);
     }

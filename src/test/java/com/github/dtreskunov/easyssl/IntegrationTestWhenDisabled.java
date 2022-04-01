@@ -10,11 +10,15 @@
 // -----------------------------------------------------------------------------
 package com.github.dtreskunov.easyssl;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 
 import com.github.dtreskunov.easyssl.IntegrationTestWhenDisabled.ScanConfiguration;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(properties = {"easyssl.enabled=false"}, classes = {ScanConfiguration.class})
 public class IntegrationTestWhenDisabled {
@@ -22,5 +26,8 @@ public class IntegrationTestWhenDisabled {
     public static class ScanConfiguration {}
 
     @Test
-    public void sanity() {}
+    public void sanity(@Autowired(required = false) EasySslBeans beans, @Autowired(required = false) EasySslProperties config) {
+        assertThat(beans, nullValue());
+        assertThat(config, nullValue());
+    }
 }
