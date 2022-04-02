@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
@@ -35,6 +36,7 @@ import org.springframework.web.client.RestTemplate;
  * </ol>
  */
 @Configuration
+@Import(EasySslProperties.EasySslPropertiesConfiguration.class)
 @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
 public class EasySslBeans {
 
