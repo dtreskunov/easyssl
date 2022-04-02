@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.servlet.Filter;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,7 +20,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
@@ -36,7 +36,6 @@ import org.springframework.web.client.RestTemplate;
  * </ol>
  */
 @Configuration
-@Import(EasySslProperties.EasySslPropertiesConfiguration.class)
 @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
 public class EasySslBeans {
 
@@ -58,6 +57,12 @@ public class EasySslBeans {
         return helper.getSSLContext();
     }
 
+    @Bean
+    @ConditionalOnEnabled
+    EasySslProperties easySslProperties() {
+        return new EasySslProperties();
+    }
+    
     @Bean
     @ConditionalOnEnabled
     public EasySslHelper easySslHelper(EasySslProperties config) throws Exception {
@@ -114,13 +119,23 @@ public class EasySslBeans {
         return new EasySslJettyCustomizer();
     }
 
-    @Autowired
-    public void setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
-        if (config != null && config.isEnabled() && config.isServerCustomizationEnabled()) {
-            setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
-        } else {
-            setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
-        }
+    /**
+     * Sets the {@code local.server.protocol} environment property to {@code http} or {@code https} based on whether
+     * {@link EasySslProperties#isServerCustomizationEnabled() server customization} is enabled.
+     * <p>
+     * Implementation note: Spring Boot 2.6 <a href="https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-2.6-Release-Notes">prohibits circular bean references</a>,
+     * and throws {@code BeanCurrentlyInCreationException} unless {@code spring.main.allow-circular-references} is {@code true}. Rather than using {@code @Autowired} to do
+     * some initialization work, here we are supplying an {@code InitializingBean}. This allows {@link EasySslProperties config} to not be "in creation" when its methods are called.
+     */
+    @Bean(autowireCandidate = false)
+    InitializingBean setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
+        return () -> {
+            if (config != null && config.isEnabled() && config.isServerCustomizationEnabled()) {
+                setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
+            } else {
+                setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")

@@ -5,11 +5,8 @@ import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.server.Ssl.ClientAuth;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.validation.annotation.Validated;
 
@@ -34,16 +31,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "easyssl")
 public class EasySslProperties {
-
-    @Configuration
-    @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
-    static class EasySslPropertiesConfiguration {
-        @Bean
-        EasySslProperties easySslProperties() {
-            return new EasySslProperties();
-        }
-
-    }
 
     @NotNull
     private List<Resource> m_caCertificate;
