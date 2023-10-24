@@ -48,7 +48,7 @@ repositories {
 }
 
 dependencies {
-  implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.0')
+  implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.17')
   api('org.springframework.boot:spring-boot')
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
