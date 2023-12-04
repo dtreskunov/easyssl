@@ -22,6 +22,6 @@ public class Controller {
     @RequestMapping("/whoami")
     public String whoami(Authentication auth) {
         X509Certificate clientCert = (X509Certificate) auth.getCredentials();
-        return clientCert.getSubjectDN().toString();
+        return clientCert.getSubjectX500Principal().toString();
     }
 }

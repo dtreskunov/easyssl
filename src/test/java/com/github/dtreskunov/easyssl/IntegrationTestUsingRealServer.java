@@ -14,8 +14,6 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import com.github.dtreskunov.easyssl.server.Server;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +32,8 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
+
+import com.github.dtreskunov.easyssl.server.Server;
 
 @SpringBootTest(properties = {"spring.profiles.active=test"}, classes = {Server.class}, webEnvironment = WebEnvironment.RANDOM_PORT)
 public class IntegrationTestUsingRealServer {
@@ -79,7 +79,7 @@ public class IntegrationTestUsingRealServer {
     @Test
     public void happyCase_updateCertificate() throws Exception {
         X509Certificate[] originalServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
-        assertThat(originalServerCertificates[0].getSubjectDN().getName(), is("CN=localhost, OU=Localhost1"));
+        assertThat(originalServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost1"));
 
         ResponseEntity<String> response = restTemplate.getForEntity("/whoami", String.class);
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
@@ -91,7 +91,7 @@ public class IntegrationTestUsingRealServer {
             easySslHelper.reinitialize();
 
             X509Certificate[] updatedServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
-            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectDN().getName(), is("CN=localhost, OU=Localhost2"));    
+            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost2"));    
 
             response = restTemplate.getForEntity("/whoami", String.class);
             assertThat(response.getStatusCode(), is(HttpStatus.OK));
