@@ -9,23 +9,23 @@ import org.springframework.util.Assert;
 
 abstract class AbstractNamedResource extends AbstractResource {
 
-    private final String m_name;
+    private final String name;
 
     public AbstractNamedResource(String name) {
         Assert.notNull(name, "name cannot be null");
-        m_name = name;
+        this.name = name;
     }
 
     abstract String getValue(String name);
 
     @Override
     public String getDescription() {
-        return "Contents of " + getClass().getSimpleName() + " named " + m_name;
+        return "Contents of " + getClass().getSimpleName() + " named " + name;
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        String value = getValue(m_name);
+        String value = getValue(name);
         if (value == null) {
             throw new IOException(getDescription() + " is null");
         }
