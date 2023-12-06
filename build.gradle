@@ -14,6 +14,8 @@ plugins {
   id 'com.palantir.git-version' version '0.12.2'
   id 'io.codearte.nexus-staging' version '0.21.2'
   id 'de.marcphilipp.nexus-publish' version '0.4.0'
+  id 'org.springframework.boot' version '3.0.13' apply false
+  id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'com.github.dtreskunov'
@@ -39,23 +41,28 @@ println "Project version: ${version}"
 ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
 }
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
+java {
+  sourceCompatibility = 17
+  targetCompatibility = 17
+}
 repositories {
   mavenCentral()
 }
 
+dependencyManagement {
+  imports {
+    mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+  }
+}
+
 dependencies {
-  implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.18')
   implementation platform('software.amazon.awssdk:bom:2.21.33')
   api('org.springframework.boot:spring-boot')
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
   api('org.slf4j:slf4j-api')
   api('javax.validation:validation-api:2.0.1.Final')
-  api('javax.servlet:javax.servlet-api')
+  api('jakarta.servlet:jakarta.servlet-api')
   api(project.getProperties().getOrDefault('fips', 'true').toBoolean() ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
@@ -69,7 +76,7 @@ dependencies {
   testImplementation('org.springframework.boot:spring-boot-starter-security')
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
-  testImplementation('org.apache.httpcomponents:httpclient')
+  testImplementation('org.apache.httpcomponents.client5:httpclient5')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
   testImplementation('software.amazon.awssdk:secretsmanager') // needed for AWS Secrets Manager support
 }

@@ -14,8 +14,12 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -56,7 +60,16 @@ public class IntegrationTestUsingRealServer {
     private RestTemplate restTemplate;
 
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
+        SSLConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+                .setSslContext(sslContext)
+                .build();
+        HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
+                .setSSLSocketFactory(sslSocketFactory)
+                .build();
+        HttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(cm)
+                .evictExpiredConnections()
+                .build();
         return new RestTemplateBuilder()
                 .rootUri(protocol + "://localhost:" + port)
                 .requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
