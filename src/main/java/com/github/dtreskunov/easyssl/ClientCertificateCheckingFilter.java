@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 class ClientCertificateCheckingFilter extends GenericFilterBean {
 
-    private static final String REQUEST_ATTRIBUTE_X509_CERTIFICATE = "javax.servlet.request.X509Certificate";
+    private static final String REQUEST_ATTRIBUTE_X509_CERTIFICATE = "jakarta.servlet.request.X509Certificate";
     private final Logger m_log = LoggerFactory.getLogger(getClass());
     private final X509TrustManager m_trustManager;
 
