@@ -78,6 +78,7 @@ before_install:
   - env | grep '^TRAVIS_' | sort
   - openssl aes-256-cbc -K $encrypted_7a85652b67b9_key -iv $encrypted_7a85652b67b9_iv
     -in secring.gpg.enc -out secring.gpg -d
+  - openssl version
 
 env:
   global:
