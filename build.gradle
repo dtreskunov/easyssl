@@ -40,6 +40,7 @@ println "Project version: ${version}"
 
 ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
+  servletContainer = project.getProperties().getOrDefault('servletContainer', 'tomcat')
 }
 java {
   sourceCompatibility = 17
@@ -72,13 +73,22 @@ dependencies {
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
   }
-  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
+  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + servletContainer)
   testImplementation('org.springframework.boot:spring-boot-starter-security')
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents.client5:httpclient5')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
   testImplementation('software.amazon.awssdk:secretsmanager') // needed for AWS Secrets Manager support
+}
+
+if ('jetty'.equals(servletContainer)) {
+  dependencies {
+    // this shouldn't be needed for Spring Boot 3.2+
+    // https://github.com/spring-projects/spring-boot/issues/33044
+    // https://github.com/spring-projects/spring-boot/issues/31720
+    testRuntimeOnly('org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2')
+  }
 }
 
 task generateTestCerts(type: Exec) {
