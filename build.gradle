@@ -49,7 +49,7 @@ repositories {
 
 dependencies {
   implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.18')
-  implementation platform('software.amazon.awssdk:bom:2.21.33')
+  implementation platform('com.amazonaws:aws-java-sdk-bom:1.12.621')
   api('org.springframework.boot:spring-boot')
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
@@ -60,7 +60,7 @@ dependencies {
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
   compileOnly('io.undertow:undertow-core') // needed for undertow-specific customizations
-  compileOnly('software.amazon.awssdk:secretsmanager') // needed for AWS Secrets Manager support
+  compileOnly('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
   runtimeOnly('org.springframework.boot:spring-boot-starter-validation')
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
@@ -71,7 +71,7 @@ dependencies {
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents:httpclient')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
-  testImplementation('software.amazon.awssdk:secretsmanager') // needed for AWS Secrets Manager support
+  testImplementation('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
 }
 
 task generateTestCerts(type: Exec) {
