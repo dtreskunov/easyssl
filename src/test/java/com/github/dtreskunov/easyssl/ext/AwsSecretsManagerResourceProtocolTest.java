@@ -20,10 +20,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
-import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
+import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.model.AWSSecretsManagerException;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class AwsSecretsManagerResourceProtocolTest {
@@ -31,7 +31,7 @@ public class AwsSecretsManagerResourceProtocolTest {
     @Import(AwsSecretsManagerProtocolBeans.class)
     public static class TestConfig {
         @MockBean
-        private SecretsManagerClient secretsClient;
+        private AWSSecretsManager secretsManager;
 
         @Bean
         public Resource happyResource(@Value("aws-secrets-manager:happy") Resource resource) {
@@ -44,7 +44,7 @@ public class AwsSecretsManagerResourceProtocolTest {
     }
 
     @Autowired
-    private SecretsManagerClient secretsClient;
+    private AWSSecretsManager secretsManager;
 
     @Autowired
     @Qualifier("happyResource")
@@ -56,11 +56,11 @@ public class AwsSecretsManagerResourceProtocolTest {
 
     @Test
     public void testHappy() throws IOException {
-        GetSecretValueRequest mockedRequest = GetSecretValueRequest.builder().secretId("happy").build();
-        GetSecretValueResponse mockedResponse = GetSecretValueResponse.builder().secretString("awesome").build();
+        GetSecretValueRequest mockedRequest = new GetSecretValueRequest().withSecretId("happy");
+        GetSecretValueResult mockedResult = new GetSecretValueResult().withSecretString("awesome");
         Mockito
-            .when(secretsClient.getSecretValue(mockedRequest))
-            .thenReturn(mockedResponse);
+            .when(secretsManager.getSecretValue(mockedRequest))
+            .thenReturn(mockedResult);
         assertThat(
                 StreamUtils.copyToString(happyResource.getInputStream(), Charset.defaultCharset()),
                 is("awesome"));
@@ -68,11 +68,11 @@ public class AwsSecretsManagerResourceProtocolTest {
 
     @Test
     public void testSad() {
-        GetSecretValueRequest mockedRequest = GetSecretValueRequest.builder().secretId("sad").build();
+        GetSecretValueRequest mockedRequest = new GetSecretValueRequest().withSecretId("sad");
         Mockito
-            .when(secretsClient.getSecretValue(mockedRequest))
-            .thenThrow(SecretsManagerException.builder().build());
-        assertThrows(SecretsManagerException.class, () ->
+            .when(secretsManager.getSecretValue(mockedRequest))
+            .thenThrow(new AWSSecretsManagerException("test"));
+        assertThrows(AWSSecretsManagerException.class, () ->
             sadResource.getInputStream());
     }
 }
