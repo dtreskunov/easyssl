@@ -14,6 +14,7 @@ plugins {
   id 'com.palantir.git-version' version '0.12.2'
   id 'io.codearte.nexus-staging' version '0.21.2'
   id 'de.marcphilipp.nexus-publish' version '0.4.0'
+  id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.github.dtreskunov'
@@ -40,6 +41,12 @@ ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
 }
 
+// override dependency versions specified in
+// https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.7.18/spring-boot-dependencies-2.7.18.pom
+ext['logback.version'] = '1.2.13'
+ext['spring-framework.version'] = '5.3.39'
+ext['snakeyaml.version'] = '1.33'
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -47,9 +54,15 @@ repositories {
   mavenCentral()
 }
 
+// https://www.baeldung.com/spring-boot-override-dependency-versions
+dependencyManagement {
+  imports {
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:2.7.18'
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.621'
+  }
+}
+
 dependencies {
-  implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.18')
-  implementation platform('com.amazonaws:aws-java-sdk-bom:1.12.621')
   api('org.springframework.boot:spring-boot')
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
