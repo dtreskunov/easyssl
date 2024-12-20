@@ -12,8 +12,8 @@ plugins {
   id 'java-library'
   id 'signing'
   id 'com.palantir.git-version' version '0.12.2'
-  id 'io.codearte.nexus-staging' version '0.21.2'
-  id 'de.marcphilipp.nexus-publish' version '0.4.0'
+  id 'io.codearte.nexus-staging' version '0.30.0'
+  id 'maven-publish'
   id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -39,6 +39,8 @@ println "Project version: ${version}"
 
 ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
+  nexusUsername = project.findProperty('nexusUsername') ?: 'secured'
+  nexusPassword = project.findProperty('nexusPassword') ?: 'secured'
 }
 
 // override dependency versions specified in
@@ -166,8 +168,8 @@ publishing {
       def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
       url = isSnapshotVersion ? snapshotsRepoUrl : releasesRepoUrl
       credentials {
-        username project.findProperty('nexusUsername') ?: 'secured'
-        password project.findProperty('nexusPassword') ?: 'secured'
+        username nexusUsername
+        password nexusPassword
       }
     }
   }
@@ -183,14 +185,8 @@ nexusStaging {
   packageGroup = group
   numberOfRetries = 20
   delayBetweenRetriesInMillis = 10000
-  username = project.findProperty('nexusUsername') ?: 'secured'
-  password = project.findProperty('nexusPassword') ?: 'secured'
-}
-
-nexusPublishing {
-  repositories {
-    sonatype()
-  }
+  username = nexusUsername
+  password = nexusPassword
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
@@ -201,6 +197,6 @@ task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
 }
 
 task myPublish {
-  dependsOn publishToSonatype, closeAndReleaseRepositoryIfNeeded
-  closeAndReleaseRepositoryIfNeeded.mustRunAfter publishToSonatype
+  dependsOn publish, closeAndReleaseRepositoryIfNeeded
+  closeAndReleaseRepositoryIfNeeded.mustRunAfter publish
 }
