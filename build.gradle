@@ -47,7 +47,7 @@ ext {
 // https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.7.18/spring-boot-dependencies-2.7.18.pom
 ext['logback.version'] = '1.2.13'
 ext['spring-framework.version'] = '5.3.39'
-ext['snakeyaml.version'] = '1.33'
+ext['snakeyaml.version'] = '2.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
