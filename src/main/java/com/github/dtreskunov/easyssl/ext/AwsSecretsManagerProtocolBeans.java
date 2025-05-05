@@ -37,7 +37,7 @@ public class AwsSecretsManagerProtocolBeans {
         return new ProtocolResolverRegistrar(new AwsSecretsManagerProtocolResolver(secretsManager));
     }
 
-    static class AwsSecretsManagerProtocolResolver implements ProtocolResolver {
+    public static class AwsSecretsManagerProtocolResolver implements ProtocolResolver {
         public static final String PROTOCOL_PREFIX = "aws-secrets-manager:";
         private final AWSSecretsManager secretsManager;
 
@@ -56,7 +56,7 @@ public class AwsSecretsManagerProtocolBeans {
         }
     }
 
-    static class AwsSecretsManagerResource extends AbstractNamedResource {
+    public static class AwsSecretsManagerResource extends AbstractNamedResource {
         private final Logger log = LoggerFactory.getLogger(AwsSecretsManagerResource.class);
         private final AWSSecretsManager secretsManager;
 
