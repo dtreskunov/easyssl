@@ -5,17 +5,18 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.X509TrustManager;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.server.Ssl.ClientAuth;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.GenericFilterBean;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * A servlet filter that responds with a {@link HttpStatus#FORBIDDEN 403 Forbidden} when the provided
@@ -31,7 +32,7 @@ import org.springframework.web.filter.GenericFilterBean;
  */
 class ClientCertificateCheckingFilter extends GenericFilterBean {
 
-    private static final String REQUEST_ATTRIBUTE_X509_CERTIFICATE = "javax.servlet.request.X509Certificate";
+    private static final String REQUEST_ATTRIBUTE_X509_CERTIFICATE = "jakarta.servlet.request.X509Certificate";
     private final Logger m_log = LoggerFactory.getLogger(getClass());
     private final X509TrustManager m_trustManager;
 
