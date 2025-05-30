@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
-import javax.servlet.Filter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -25,6 +24,8 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.web.client.RestTemplate;
+
+import jakarta.servlet.Filter;
 
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
@@ -101,7 +102,7 @@ public class EasySslBeans {
     public EasySslTomcatCustomizer easySslTomcatCustomizer() throws Exception {
         return new EasySslTomcatCustomizer();
     }
-    
+
     /**
      * Jetty 9.4.15 started doing additional checks on client certificates. This bit of code reverts to the old behavior.
      *

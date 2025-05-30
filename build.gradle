@@ -14,6 +14,7 @@ plugins {
   id 'com.palantir.git-version' version '0.12.2'
   id 'io.codearte.nexus-staging' version '0.30.0'
   id 'maven-publish'
+  id 'de.marcphilipp.nexus-publish' version '0.4.0'
   id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -41,16 +42,19 @@ ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
   nexusUsername = project.findProperty('nexusUsername') ?: 'secured'
   nexusPassword = project.findProperty('nexusPassword') ?: 'secured'
+  servletContainer = project.getProperties().getOrDefault('servletContainer', 'tomcat')
 }
+java {
+  sourceCompatibility = 17
+  targetCompatibility = 17
+}
+
+ext['snakeyaml.version'] = '2.3'
 
 // override dependency versions specified in
 // https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.7.18/spring-boot-dependencies-2.7.18.pom
-ext['logback.version'] = '1.2.13'
-ext['spring-framework.version'] = '5.3.39'
-ext['snakeyaml.version'] = '2.0'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+ext['logback.version'] = '1.5.16'
+ext['spring-framework.version'] = '6.2.3'
 
 repositories {
   mavenCentral()
@@ -59,8 +63,8 @@ repositories {
 // https://www.baeldung.com/spring-boot-override-dependency-versions
 dependencyManagement {
   imports {
-    mavenBom 'org.springframework.boot:spring-boot-dependencies:2.7.18'
-    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.621'
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.3'
+    mavenBom 'software.amazon.awssdk:bom:2.21.33'
   }
 }
 
@@ -69,8 +73,9 @@ dependencies {
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
   api('org.slf4j:slf4j-api')
-  api('javax.validation:validation-api:2.0.1.Final')
-  api('javax.servlet:javax.servlet-api')
+  api('jakarta.validation:jakarta.validation-api:3.0.2')
+  api('jakarta.servlet:jakarta.servlet-api')
+  api('com.amazonaws:aws-java-sdk-secretsmanager:1.12.783')
   api(project.getProperties().getOrDefault('fips', 'true').toBoolean() ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
@@ -80,13 +85,22 @@ dependencies {
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
   }
-  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
+  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + servletContainer)
   testImplementation('org.springframework.boot:spring-boot-starter-security')
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
-  testImplementation('org.apache.httpcomponents:httpclient')
+  testImplementation('org.apache.httpcomponents.client5:httpclient5')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
-  testImplementation('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
+  testImplementation('com.amazonaws:aws-java-sdk-secretsmanager:1.12.783') // needed for AWS Secrets Manager support
+}
+
+if ('jetty'.equals(servletContainer)) {
+  dependencies {
+    // this shouldn't be needed for Spring Boot 3.2+
+    // https://github.com/spring-projects/spring-boot/issues/33044
+    // https://github.com/spring-projects/spring-boot/issues/31720
+    testRuntimeOnly('org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2')
+  }
 }
 
 task generateTestCerts(type: Exec) {
@@ -105,7 +119,7 @@ test {
     showStandardStreams = true
   }
   // https://junit-pioneer.org/docs/environment-variables/#warnings-for-reflective-access
-  jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
 }
 
 //disable javadoc doclint for Java8
@@ -187,6 +201,22 @@ nexusStaging {
   delayBetweenRetriesInMillis = 10000
   username = nexusUsername
   password = nexusPassword
+}
+
+dependencyLocking {
+  lockAllConfigurations()
+}
+
+tasks.register("generateLockfile") {
+  group = "build setup"
+  description = "Resolves all configurations and writes dependencies.lock files"
+
+  doLast {
+    configurations.findAll { it.canBeResolved }.each { config ->
+      println "Resolving configuration: ${config.name}"
+      config.resolve()
+    }
+  }
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
