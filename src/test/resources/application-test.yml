@@ -15,6 +15,11 @@ easyssl:
   refreshCommand: ['sh', '-c', 'pwd']
   clientAuth: WANT
 
+server:
+  ssl:
+    bundle: easyssl
+
+
 server.ssl:
   enabledProtocols: TLSv1.2
   ciphers:
