@@ -82,15 +82,15 @@ EOF
     # Create private key
     if key_pkcs8
       if key_pass
-        `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
+        `openssl ecparam -genkey -name prime256v1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -v1 PBE-SHA1-RC4-128 -passout pass:#{key_pass}`
       else
-        `openssl ecparam -genkey -name secp256r1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -nocrypt`
+        `openssl ecparam -genkey -name prime256v1 | openssl ec | openssl pkcs8 -out #{key} -topk8 -nocrypt`
       end
     else
       if key_pass
-        `openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key} -aes128 -passout pass:#{key_pass}`
+        `openssl ecparam -genkey -name prime256v1 | openssl ec -out #{key} -aes128 -passout pass:#{key_pass}`
       else
-        `openssl ecparam -genkey -name secp256r1 | openssl ec -out #{key}`
+        `openssl ecparam -genkey -name prime256v1 | openssl ec -out #{key}`
       end
     end
 

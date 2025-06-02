@@ -14,8 +14,12 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -56,7 +60,16 @@ public class IntegrationTestUsingRealServer {
     private RestTemplate restTemplate;
 
     private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
+        SSLConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+                .setSslContext(sslContext)
+                .build();
+        HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
+                .setSSLSocketFactory(sslSocketFactory)
+                .build();
+        HttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(cm)
+                .evictExpiredConnections()
+                .build();
         return new RestTemplateBuilder()
                 .rootUri(protocol + "://localhost:" + port)
                 .requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
@@ -91,7 +104,7 @@ public class IntegrationTestUsingRealServer {
             easySslHelper.reinitialize();
 
             X509Certificate[] updatedServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
-            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost2"));    
+            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost2"));
 
             response = restTemplate.getForEntity("/whoami", String.class);
             assertThat(response.getStatusCode(), is(HttpStatus.OK));
@@ -144,7 +157,7 @@ public class IntegrationTestUsingRealServer {
         RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
 
         HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () ->
-            revokedClientRestTemplate.getForEntity("/", String.class));
+                revokedClientRestTemplate.getForEntity("/", String.class));
         assertThat(exception.getMessage(), containsString("403"));
     }
 
@@ -164,7 +177,7 @@ public class IntegrationTestUsingRealServer {
         untrustedClientRestTemplate.getForEntity("/", String.class);
 
         HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () ->
-            untrustedClientRestTemplate.getForEntity("/whoami", String.class));
+                untrustedClientRestTemplate.getForEntity("/whoami", String.class));
         assertThat(exception.getMessage(), containsString("403"));
     }
 
@@ -178,7 +191,7 @@ public class IntegrationTestUsingRealServer {
         RestTemplate revokedRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedServerProperties));
 
         assertThrows(ResourceAccessException.class, () ->
-            revokedRestTemplate.getForEntity("/", String.class));
+                revokedRestTemplate.getForEntity("/", String.class));
     }
 
     private void swapPaths(Path path1, Path path2) throws IOException {
