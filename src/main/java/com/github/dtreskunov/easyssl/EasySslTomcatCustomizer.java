@@ -12,7 +12,6 @@ import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.embedded.tomcat.ConfigurableTomcatWebServerFactory;
-import org.springframework.boot.web.server.SslStoreProvider;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationListener;
 import org.springframework.util.ReflectionUtils;
@@ -25,7 +24,7 @@ class EasySslTomcatCustomizer implements WebServerFactoryCustomizer<Configurable
     @Override
     public void onApplicationEvent(EasySslHelper.SSLContextReinitializedEvent event) {
         LOG.info("Updating Tomcat with new SSLContext");
-        final SslStoreProvider sslStoreProvider = event.getHelper().getSslStoreProvider();
+        final EasySslHelper sslStoreProvider = event.getHelper();
         final KeyStore keyStore;
         final KeyStore trustStore;
         try {

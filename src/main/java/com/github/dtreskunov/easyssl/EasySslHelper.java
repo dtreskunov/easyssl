@@ -54,11 +54,6 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.ssl.SslBundle;
-import org.springframework.boot.ssl.SslBundleRegistry;
-import org.springframework.boot.ssl.DefaultSslBundle;
-import org.springframework.boot.ssl.KeyManagerFactoryWrapper;
-import org.springframework.boot.ssl.TrustManagerFactoryWrapper;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -71,7 +66,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
-    private static final String KEY_ALIAS = "easyssl-key";
+    public static final String KEY_ALIAS = "easyssl-key";
     private static final Pattern PEM_CERTIFICATE = Pattern.compile("-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", Pattern.DOTALL);
 
     public static class SSLContextReinitializedEvent extends ApplicationEvent {
@@ -85,12 +80,6 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         public EasySslHelper getHelper() {
             return helper;
         }
-    }
-
-    private SslBundleRegistry sslBundleRegistry;
-
-    public void setSslBundleRegistry(SslBundleRegistry sslBundleRegistry) {
-        this.sslBundleRegistry = sslBundleRegistry;
     }
 
     private final SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -172,6 +161,14 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         return trustManager;
     }
 
+    synchronized public String getKeyPassword() {
+        return KEY_PASSWORD;
+    }
+
+    synchronized public KeyManager[] getKeyManagers() throws Exception {
+        return getKeyManagers(keyStore, KEY_PASSWORD.toCharArray());
+    }
+
     private static long getMillis(Duration nullable) {
         return nullable == null ? 0 : nullable.toMillis();
     }
@@ -200,27 +197,18 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         }
     }
 
-    private void initialize() throws UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException {
+    private void initialize() {
         LOG.info("{} EasySSL with command {}, certificate from {}, key from {}, CA from {}, and CRL from {} with timeout {} (disabled if zero). Next update in {} (disabled if zero)",
                 initialized ? "Reinitializing" : "Initializing", config.getRefreshCommand(),
                 config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
                 config.getRefreshTimeout(), config.getRefreshInterval());
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(keyStore, KEY_PASSWORD.toCharArray());
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(trustStore);
-
-        DefaultSslBundle sslBundle = new DefaultSslBundle(
-                new KeyManagerFactoryWrapper(kmf),
-                new TrustManagerFactoryWrapper(tmf)
-        );
-        if (sslBundleRegistry != null) {
-            sslBundleRegistry.addBundle("easyssl", sslBundle);
-            LOG.info("Registered 'easyssl' SslBundle.");
-        }
         try {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keyStore, KEY_PASSWORD.toCharArray());
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
             addBouncyCastleSecurityProvider();
             if (config.getRefreshCommand() != null) {
                 LOG.info("Refresh command: {}", config.getRefreshCommand());
