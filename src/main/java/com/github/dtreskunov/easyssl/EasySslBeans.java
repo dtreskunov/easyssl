@@ -1,23 +1,18 @@
 package com.github.dtreskunov.easyssl;
 
-import java.security.KeyStore;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.ssl.*;
+import org.springframework.boot.ssl.DefaultSslBundleRegistry;
+import org.springframework.boot.ssl.SslBundle;
+import org.springframework.boot.ssl.SslBundleRegistry;
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.Ssl;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -93,116 +88,13 @@ public class EasySslBeans {
         final SslBundleRegistry sslBundleRegistry = new DefaultSslBundleRegistry();
         
         // Create a custom SSL bundle using the helper's keystore and truststore
-        SslBundle sslBundle = new SslBundle() {
-            @Override
-            public SslStoreBundle getStores() {
-                return new SslStoreBundle() {
-                    @Override
-                    public KeyStore getKeyStore() {
-                        return helper.getKeyStore();
-                    }
-
-                    @Override
-                    public String getKeyStorePassword() {
-                        return helper.getKeyPassword();
-                    }
-
-                    @Override
-                    public KeyStore getTrustStore() {
-                        return helper.getTrustStore();
-                    }
-                };
-            }
-
-            @Override
-            public SslBundleKey getKey() {
-                return new SslBundleKey() {
-                    @Override
-                    public String getAlias() {
-                        return EasySslHelper.KEY_ALIAS;
-                    }
-
-                    @Override
-                    public String getPassword() {
-                        return helper.getKeyPassword();
-                    }
-                };
-            }
-
-            @Override
-            public SslOptions getOptions() {
-                return new SslOptions() {
-                    @Override
-                    public String[] getEnabledProtocols() {
-                        return sslProperties.getEnabledProtocols();
-                    }
-
-                    @Override
-                    public String[] getCiphers() {
-                        return sslProperties.getCiphers();
-                    }
-                };
-            }
-
-            @Override
-            public String getProtocol() {
-                return "TLS";
-            }
-
-            @Override
-            public SslManagerBundle getManagers() {
-                return new SslManagerBundle() {
-                    @Override
-                    public KeyManagerFactory getKeyManagerFactory() {
-                        try {
-                            KeyManagerFactory factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                            factory.init(helper.getKeyStore(), helper.getKeyPassword().toCharArray());
-                            return factory;
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-
-                    @Override
-                    public TrustManagerFactory getTrustManagerFactory() {
-                        try {
-                            TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                            factory.init(helper.getTrustStore());
-                            return factory;
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
-            }
-        };
+        SslBundle sslBundle = new EasySslBundleImpl.SslBundleImpl(helper, sslProperties);
 
         // Register the SSL bundle
-        sslBundleRegistry.registerBundle("easyssl", sslBundle);
+        sslBundleRegistry.registerBundle(EasySslBundleImpl.BUNDLE_NAME, sslBundle);
 
         return factory -> {
-            factory.setSslBundles(new SslBundles() {
-                @Override
-                public SslBundle getBundle(String name) throws NoSuchSslBundleException {
-                    if ("easyssl".equals(name)) {
-                        return sslBundle;
-                    }
-                    throw new UnsupportedOperationException("No such SSL bundle: " + name);
-                }
-
-                @Override
-                public void addBundleUpdateHandler(String name, Consumer<SslBundle> updateHandler) throws NoSuchSslBundleException {
-                    if (!"easyssl".equals(name)) {
-                        throw new UnsupportedOperationException("No such SSL bundle: " + name);
-                    }
-                    // No dynamic updates in this implementation
-                }
-
-                @Override
-                public List<String> getBundleNames() {
-                    return List.of("easyssl");
-                }
-            });
+            factory.setSslBundles(new EasySslBundleImpl.SslBundlesImpl(sslBundle));
             factory.setSsl(sslProperties);
         };
     }
