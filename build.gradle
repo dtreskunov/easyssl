@@ -207,18 +207,6 @@ dependencyLocking {
   lockAllConfigurations()
 }
 
-tasks.register("generateLockfile") {
-  group = "build setup"
-  description = "Resolves all configurations and writes dependencies.lock files"
-
-  doLast {
-    configurations.findAll { it.canBeResolved }.each { config ->
-      println "Resolving configuration: ${config.name}"
-      config.resolve()
-    }
-  }
-}
-
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
   if (isSnapshotVersion) {
     enabled = false
