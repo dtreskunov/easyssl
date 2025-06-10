@@ -44,6 +44,7 @@ import jakarta.servlet.Filter;
 public class EasySslBeans {
 
     private static final String PROTOCOL_PROPERTY = "local.server.protocol";
+    private static final String SERVER_SSL_BUNDLE_PROPERTY = "server.ssl.bundle";
 
     @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
     public static @interface ConditionalOnEnabled {}
@@ -126,9 +127,10 @@ public class EasySslBeans {
     }
 
     @Autowired
-    public void setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
+    public void setEnvironmentProperties(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
         if (config != null && config.isEnabled() && config.isServerCustomizationEnabled()) {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
+            setEnvironmentProperty(context, SERVER_SSL_BUNDLE_PROPERTY, EasySslBundleImpl.BUNDLE_NAME);
         } else {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
         }
