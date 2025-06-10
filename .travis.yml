@@ -14,49 +14,20 @@ stages:
   - test
   - deploy
 
+script:
+  - ./gradlew check
+
 jobs:
   include:
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=tomcat
-        - ORG_GRADLE_PROJECT_fips=false
-      script:
-        - ./gradlew check
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=tomcat
-        - ORG_GRADLE_PROJECT_fips=true
-      script:
-        - ./gradlew check
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=jetty
-        - ORG_GRADLE_PROJECT_fips=false
-      script:
-        - ./gradlew check
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=jetty
-        - ORG_GRADLE_PROJECT_fips=true
-      script:
-        - ./gradlew check
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=undertow
-        - ORG_GRADLE_PROJECT_fips=false
-      script:
-        - ./gradlew check
-    - stage: test
-      env:
-        - ORG_GRADLE_PROJECT_servletContainer=undertow
-        - ORG_GRADLE_PROJECT_fips=true
-      script:
-        - ./gradlew check
     - stage: deploy
       if: repo = dtreskunov/easyssl
       env:
         - ORG_GRADLE_PROJECT_servletContainer=tomcat
         - ORG_GRADLE_PROJECT_fips=true
+        - GPG_KEY_ID: B17E37F8
+        - SONATYPE_USERNAME: yiKhkza2
+        - secure: "IVoDVL/4fv5QoN2xKb4mSDsxM2HkNYTAYw4BW2z6WW9i77PGSGmnBqA4Mop0JzwfhyYw5zsDVDLP6h81UBHRTVgbfasAGwRl6aorsmAV0K9UF6m18mEyk41XtK23GnQX0ECARyYdlQdYTozpuK6BD4YwINPcwUGrGoA6zxe85ayLJncUfpRjemSlWm0t5QbdemGtx0jtrK0V1Ns8KkPfUeGIZRO9CS+TRTkDePLcOR3l4yhM+SP33XRLi3GfEhLhMPmtyUGf0l1IDQT9AcuC9R0YI2eijP+H/jha5U4gd+ytrgo6W6VBx/tFG5fe57jAq06fNzHaKW5YWIiRM38q6/jvk766SIx9tbjVxyiwA+XoWYpsd9BMrH4eH8RX+tYgSl5m/jUxfwTIxzxVyiB6g3sX9Z7asKUCho3ur67RAEOMiu7RvEpaWf3Xe0pppnfSHO9M1DYHg4bstD38u/IVHqsBg99LhzKZaodd07pE+CYk4tgKeUNp2n9AN12JHa6kQxCvljRlrXxhqrZn7oDvaBRhFU212Gj52JYtATYh9bPhE522LegypUR6S+NBc0BATfaOii320oNB1Cp7Ua1BOsxbmwsZ3Uyhth1v4VKKrz/rJLrVpB+fsdOC/JyQ0HJWq4PZ4YmZ7JadSfT5QrzscvZ0h9DSvad9Ce5eNc6fq/0=" # GPG_KEY_PASSWORD
+        - secure: "CIb7pN59BfSEac76isIXLXGCBkdiYXRUu/vDRbzj4gnUSw5CnHaUEsflHWqPQNtsCXgUly6ksyxmfUi/xvfd2wOlTjITef1kXDOo0bN+rCk+Iy6UkSGiUM5yUg4qA8QsywQk2oVgEPW0eeNqdsn7eU57FeSuPP5UkfdoyMnUntqKYlz4rtxhA+J8JIdrz814svHYL0PWSO4KmkXW8mZ1gl0iDl13c59leIPkglECMBey/OX7nzM9FfTZlmr6lgPE5hAWOR7zg+bhx4SloNon6mvGAz26rCocrcWuDvQpD7TO8nLBXj4QHURS9dohtm7LUJGXshC47yQP0JL7E61koNVuoI/gIgtG3Eze0mJ+5s11i4qwpQJ+422HM4j9DI7lJeT7BwzMkGL//k6BR2oCxKS5tixrUt/Ja11ZlSTaGkOiZfDwCFmIpQXZ3Nry+b717X7STLeMM+JVr31m3ZHgm3l6ija1orlVj8JSOPWtavC1nz2dFKiMr2b2DXIKwPj56bHy6vNQVg8zdMou/jwBrPUefd6gPtgrKed3frpkR12/icxxIX39sY/beVf92ubnfZbkzxigT7K4x3pPSSO+euOImezvgsc+s4V64VadcCH/Z9+o+A98fb/O6shziYaECRQMYhby/+jFI4ay24+8OHKwwM6ryucGctu3/XDPMQA=" # SONATYPE_PASSWORD
       script:
         - openssl aes-256-cbc -K $encrypted_7a85652b67b9_key -iv $encrypted_7a85652b67b9_iv
           -in secring.gpg.enc -out secring.gpg -d
@@ -86,8 +57,11 @@ before_install:
   - openssl version
 
 env:
-  global:
-    - GPG_KEY_ID: B17E37F8
-    - SONATYPE_USERNAME: yiKhkza2
-    - secure: "IVoDVL/4fv5QoN2xKb4mSDsxM2HkNYTAYw4BW2z6WW9i77PGSGmnBqA4Mop0JzwfhyYw5zsDVDLP6h81UBHRTVgbfasAGwRl6aorsmAV0K9UF6m18mEyk41XtK23GnQX0ECARyYdlQdYTozpuK6BD4YwINPcwUGrGoA6zxe85ayLJncUfpRjemSlWm0t5QbdemGtx0jtrK0V1Ns8KkPfUeGIZRO9CS+TRTkDePLcOR3l4yhM+SP33XRLi3GfEhLhMPmtyUGf0l1IDQT9AcuC9R0YI2eijP+H/jha5U4gd+ytrgo6W6VBx/tFG5fe57jAq06fNzHaKW5YWIiRM38q6/jvk766SIx9tbjVxyiwA+XoWYpsd9BMrH4eH8RX+tYgSl5m/jUxfwTIxzxVyiB6g3sX9Z7asKUCho3ur67RAEOMiu7RvEpaWf3Xe0pppnfSHO9M1DYHg4bstD38u/IVHqsBg99LhzKZaodd07pE+CYk4tgKeUNp2n9AN12JHa6kQxCvljRlrXxhqrZn7oDvaBRhFU212Gj52JYtATYh9bPhE522LegypUR6S+NBc0BATfaOii320oNB1Cp7Ua1BOsxbmwsZ3Uyhth1v4VKKrz/rJLrVpB+fsdOC/JyQ0HJWq4PZ4YmZ7JadSfT5QrzscvZ0h9DSvad9Ce5eNc6fq/0=" # GPG_KEY_PASSWORD
-    - secure: "CIb7pN59BfSEac76isIXLXGCBkdiYXRUu/vDRbzj4gnUSw5CnHaUEsflHWqPQNtsCXgUly6ksyxmfUi/xvfd2wOlTjITef1kXDOo0bN+rCk+Iy6UkSGiUM5yUg4qA8QsywQk2oVgEPW0eeNqdsn7eU57FeSuPP5UkfdoyMnUntqKYlz4rtxhA+J8JIdrz814svHYL0PWSO4KmkXW8mZ1gl0iDl13c59leIPkglECMBey/OX7nzM9FfTZlmr6lgPE5hAWOR7zg+bhx4SloNon6mvGAz26rCocrcWuDvQpD7TO8nLBXj4QHURS9dohtm7LUJGXshC47yQP0JL7E61koNVuoI/gIgtG3Eze0mJ+5s11i4qwpQJ+422HM4j9DI7lJeT7BwzMkGL//k6BR2oCxKS5tixrUt/Ja11ZlSTaGkOiZfDwCFmIpQXZ3Nry+b717X7STLeMM+JVr31m3ZHgm3l6ija1orlVj8JSOPWtavC1nz2dFKiMr2b2DXIKwPj56bHy6vNQVg8zdMou/jwBrPUefd6gPtgrKed3frpkR12/icxxIX39sY/beVf92ubnfZbkzxigT7K4x3pPSSO+euOImezvgsc+s4V64VadcCH/Z9+o+A98fb/O6shziYaECRQMYhby/+jFI4ay24+8OHKwwM6ryucGctu3/XDPMQA=" # SONATYPE_PASSWORD
+  matrix:
+    - ORG_GRADLE_PROJECT_servletContainer=tomcat   ORG_GRADLE_PROJECT_fips=false
+    - ORG_GRADLE_PROJECT_servletContainer=tomcat   ORG_GRADLE_PROJECT_fips=true
+    - ORG_GRADLE_PROJECT_servletContainer=jetty    ORG_GRADLE_PROJECT_fips=false
+    - ORG_GRADLE_PROJECT_servletContainer=jetty    ORG_GRADLE_PROJECT_fips=true
+    - ORG_GRADLE_PROJECT_servletContainer=undertow ORG_GRADLE_PROJECT_fips=false
+    - ORG_GRADLE_PROJECT_servletContainer=undertow ORG_GRADLE_PROJECT_fips=true
+
