@@ -43,6 +43,7 @@ ext {
   nexusUsername = project.findProperty('nexusUsername') ?: 'secured'
   nexusPassword = project.findProperty('nexusPassword') ?: 'secured'
   servletContainer = project.getProperties().getOrDefault('servletContainer', 'tomcat')
+  isFips = project.getProperties().getOrDefault('fips', 'true').toBoolean()
 }
 java {
   sourceCompatibility = 17
@@ -76,7 +77,7 @@ dependencies {
   api('jakarta.validation:jakarta.validation-api:3.0.2')
   api('jakarta.servlet:jakarta.servlet-api')
   api('com.amazonaws:aws-java-sdk-secretsmanager:1.12.783')
-  api(project.getProperties().getOrDefault('fips', 'true').toBoolean() ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
+  api(isFips ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
   compileOnly('io.undertow:undertow-core') // needed for undertow-specific customizations
@@ -205,6 +206,8 @@ nexusStaging {
 
 dependencyLocking {
   lockAllConfigurations()
+  lockMode = LockMode.STRICT
+  lockFile = new File(projectDir, isFips ? 'gradle.lockfile' : 'gradle.non-fips.lockfile')
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
