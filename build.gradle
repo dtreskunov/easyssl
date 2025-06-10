@@ -207,7 +207,7 @@ nexusStaging {
 dependencyLocking {
   lockAllConfigurations()
   lockMode = LockMode.STRICT
-  lockFile = new File(projectDir, isFips ? 'gradle.lockfile' : 'gradle.non-fips.lockfile')
+  lockFile = new File(projectDir, (isFips ? 'fips' : 'nonfips') + '.' + servletContainer + '.lockfile')
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
