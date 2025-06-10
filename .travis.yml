@@ -53,10 +53,13 @@ jobs:
       script:
         - ./gradlew check
     - stage: deploy
+      if: repo = dtreskunov/easyssl
       env:
         - ORG_GRADLE_PROJECT_servletContainer=tomcat
         - ORG_GRADLE_PROJECT_fips=true
       script:
+        - openssl aes-256-cbc -K $encrypted_7a85652b67b9_key -iv $encrypted_7a85652b67b9_iv
+          -in secring.gpg.enc -out secring.gpg -d
         - |
           ./gradlew \
             -Dorg.gradle.internal.publish.checksums.insecure=true \
@@ -80,8 +83,6 @@ cache:
 
 before_install:
   - env | grep '^TRAVIS_' | sort
-  - openssl aes-256-cbc -K $encrypted_7a85652b67b9_key -iv $encrypted_7a85652b67b9_iv
-    -in secring.gpg.enc -out secring.gpg -d
   - openssl version
 
 env:
