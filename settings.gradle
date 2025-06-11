@@ -9,9 +9,8 @@ gradleEnterprise {
     termsOfServiceUrl = 'https://gradle.com/terms-of-service'
     termsOfServiceAgree = 'yes'
     uploadInBackground = false
-    publishAlways()
-//    if (System.getenv('TRAVIS_JOB_ID')) {
-//      publishAlways()
-//    }
+    if (System.getenv('TRAVIS_JOB_ID')) {
+      publishAlways()
+    }
   }
 }

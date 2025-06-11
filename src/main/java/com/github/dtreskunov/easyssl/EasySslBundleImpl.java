@@ -21,7 +21,7 @@ import org.springframework.boot.web.server.Ssl;
  * Implementations of the Spring Boot SSL bundle interfaces.
  */
 final class EasySslBundleImpl {
-    public static final String BUNDLE_NAME = "easyssl";
+    static final String BUNDLE_NAME = "easyssl";
 
     private EasySslBundleImpl() {
         // Prevent instantiation
