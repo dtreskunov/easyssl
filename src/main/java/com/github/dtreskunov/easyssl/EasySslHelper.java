@@ -65,7 +65,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     private static final Logger LOG = LoggerFactory.getLogger(EasySslHelper.class);
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
-    private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
+    static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
     static final String KEY_ALIAS = "easyssl-key";
     private static final Pattern PEM_CERTIFICATE = Pattern.compile("-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", Pattern.DOTALL);
 
@@ -125,7 +125,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
-    synchronized public void reinitialize() throws UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException {
+    synchronized public void reinitialize() {
         initialize();
     }
 
@@ -159,14 +159,6 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     synchronized public X509TrustManager getTrustManager() {
         return trustManager;
-    }
-
-    synchronized public String getKeyPassword() {
-        return KEY_PASSWORD;
-    }
-
-    synchronized public KeyManager[] getKeyManagers() throws Exception {
-        return getKeyManagers(keyStore, KEY_PASSWORD.toCharArray());
     }
 
     private static long getMillis(Duration nullable) {

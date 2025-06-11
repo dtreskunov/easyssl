@@ -42,7 +42,7 @@ final class EasySslBundleImpl {
 
         @Override
         public SslBundleKey getKey() {
-            return new SslBundleKeyImpl(helper);
+            return new SslBundleKeyImpl();
         }
 
         @Override
@@ -75,7 +75,7 @@ final class EasySslBundleImpl {
 
         @Override
         public String getKeyStorePassword() {
-            return helper.getKeyPassword();
+            return EasySslHelper.KEY_PASSWORD;
         }
 
         @Override
@@ -85,11 +85,6 @@ final class EasySslBundleImpl {
     }
 
     static class SslBundleKeyImpl implements SslBundleKey {
-        private final EasySslHelper helper;
-
-        public SslBundleKeyImpl(EasySslHelper helper) {
-            this.helper = helper;
-        }
 
         @Override
         public String getAlias() {
@@ -98,7 +93,7 @@ final class EasySslBundleImpl {
 
         @Override
         public String getPassword() {
-            return helper.getKeyPassword();
+            return EasySslHelper.KEY_PASSWORD;
         }
     }
 
@@ -131,7 +126,7 @@ final class EasySslBundleImpl {
         public KeyManagerFactory getKeyManagerFactory() {
             try {
                 KeyManagerFactory factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                factory.init(helper.getKeyStore(), helper.getKeyPassword().toCharArray());
+                factory.init(helper.getKeyStore(), EasySslHelper.KEY_PASSWORD.toCharArray());
                 return factory;
             } catch (Exception e) {
                 throw new RuntimeException(e);
