@@ -194,6 +194,12 @@ dependencyLocking {
   lockFile = new File(projectDir, (isFips ? 'fips' : 'nonfips') + '.' + servletContainer + '.lockfile')
 }
 
+configurations {
+  signatures {
+    resolutionStrategy.deactivateDependencyLocking()
+  }
+}
+
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {
   if (isSnapshotVersion) {
     enabled = false
