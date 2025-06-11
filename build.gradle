@@ -69,7 +69,6 @@ dependencies {
   api('org.slf4j:slf4j-api')
   api('jakarta.validation:jakarta.validation-api')
   api('jakarta.servlet:jakarta.servlet-api')
-  api('com.amazonaws:aws-java-sdk-secretsmanager')
   api(isFips ? 'org.bouncycastle:bcpkix-fips' : 'org.bouncycastle:bcpkix-jdk15on')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
