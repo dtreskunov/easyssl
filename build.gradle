@@ -44,6 +44,7 @@ ext {
   servletContainer = project.getProperties().getOrDefault('servletContainer', 'tomcat')
   isFips = project.getProperties().getOrDefault('fips', 'true').toBoolean()
 }
+
 java {
   sourceCompatibility = 17
   targetCompatibility = 17
@@ -56,8 +57,8 @@ repositories {
 // https://www.baeldung.com/spring-boot-override-dependency-versions
 dependencyManagement {
   imports {
-    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.3'
-    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.783'
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.5.0'
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.786'
   }
 }
 
@@ -66,10 +67,10 @@ dependencies {
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
   api('org.slf4j:slf4j-api')
-  api('jakarta.validation:jakarta.validation-api:3.0.2')
+  api('jakarta.validation:jakarta.validation-api')
   api('jakarta.servlet:jakarta.servlet-api')
   api('com.amazonaws:aws-java-sdk-secretsmanager')
-  api(isFips ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
+  api(isFips ? 'org.bouncycastle:bcpkix-fips' : 'org.bouncycastle:bcpkix-jdk15on')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
   compileOnly('io.undertow:undertow-core') // needed for undertow-specific customizations
@@ -83,7 +84,7 @@ dependencies {
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents.client5:httpclient5')
-  testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
+  testImplementation('org.junit-pioneer:junit-pioneer')
   testImplementation('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
 }
 
@@ -160,6 +161,7 @@ publishing {
       }
     }
   }
+  
   repositories {
     maven {
       def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
