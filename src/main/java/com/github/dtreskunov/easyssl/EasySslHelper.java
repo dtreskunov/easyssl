@@ -54,7 +54,6 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.server.SslStoreProvider;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -66,8 +65,8 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     private static final Logger LOG = LoggerFactory.getLogger(EasySslHelper.class);
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
-    private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
-    private static final String KEY_ALIAS = "easyssl-key";
+    static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
+    static final String KEY_ALIAS = "easyssl-key";
     private static final Pattern PEM_CERTIFICATE = Pattern.compile("-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", Pattern.DOTALL);
 
     public static class SSLContextReinitializedEvent extends ApplicationEvent {
@@ -83,22 +82,6 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         }
     }
 
-    private class SslStoreProviderImpl implements SslStoreProvider {
-        @Override
-        public KeyStore getKeyStore() throws Exception {
-            synchronized(EasySslHelper.this) {
-                return keyStore;
-            }
-        }
-
-        @Override
-        public KeyStore getTrustStore() throws Exception {
-            synchronized(EasySslHelper.this) {
-                return trustStore;
-            }
-        }
-    }
-
     private final SSLContext sslContext = SSLContext.getInstance("TLS");
     private KeyStore keyStore;
     private KeyStore trustStore;
@@ -107,7 +90,6 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     private PrivateKey privateKey;
     private List<X509Certificate> certificateChain;
     private X509TrustManager trustManager;
-    private final SslStoreProvider sslStoreProvider = new SslStoreProviderImpl();
     private boolean initialized;
     private ScheduledFuture<?> localCertificateExpirationCheck;
     private ApplicationEventPublisher applicationEventPublisher;
@@ -128,10 +110,10 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         }
 
         Scheduler.runAndSchedule(
-            "Load EasySSL resources",
-            getMillis(config.getRefreshTimeout()), getMillis(config.getRefreshInterval()), TimeUnit.MILLISECONDS,
-            this::initialize);
-        
+                "Load EasySSL resources",
+                getMillis(config.getRefreshTimeout()), getMillis(config.getRefreshInterval()), TimeUnit.MILLISECONDS,
+                this::initialize);
+
         Assert.isTrue(initialized, "initialized was expected to be true");
         Assert.notNull(keyStore, "keyStore was expected to be non-null");
         Assert.notNull(trustStore, "trustStore was expected to be non-null");
@@ -162,7 +144,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
     synchronized public List<X509Certificate> getCACertificates() {
         return Collections.unmodifiableList(caCertificates);
     }
-    
+
     synchronized public X509CRL getCRL() {
         return crl;
     }
@@ -177,10 +159,6 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     synchronized public X509TrustManager getTrustManager() {
         return trustManager;
-    }
-
-    synchronized public SslStoreProvider getSslStoreProvider() {
-        return sslStoreProvider;
     }
 
     private static long getMillis(Duration nullable) {
@@ -213,15 +191,21 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     private void initialize() {
         LOG.info("{} EasySSL with command {}, certificate from {}, key from {}, CA from {}, and CRL from {} with timeout {} (disabled if zero). Next update in {} (disabled if zero)",
-            initialized ? "Reinitializing" : "Initializing", config.getRefreshCommand(),
-            config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
-            config.getRefreshTimeout(), config.getRefreshInterval());
+                initialized ? "Reinitializing" : "Initializing", config.getRefreshCommand(),
+                config.getCertificate(), config.getKey(), config.getCaCertificate(), config.getCertificateRevocationList(),
+                config.getRefreshTimeout(), config.getRefreshInterval());
         try {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keyStore, KEY_PASSWORD.toCharArray());
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
             addBouncyCastleSecurityProvider();
             if (config.getRefreshCommand() != null) {
                 LOG.info("Refresh command: {}", config.getRefreshCommand());
                 Process refreshProcess = Runtime.getRuntime().exec(
-                    config.getRefreshCommand().toArray(new String[config.getRefreshCommand().size()]));
+                        config.getRefreshCommand().toArray(new String[config.getRefreshCommand().size()]));
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(refreshProcess.getInputStream()))) {
                     reader.lines().forEach(outputLine -> {
                         LOG.info("Refresh command output: {}", outputLine);
@@ -252,11 +236,11 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
                 localCertificateExpirationCheck.cancel(false);
             }
             localCertificateExpirationCheck = CertificateExpirationCheck.scheduleCheck(keyStore.getCertificateChain(KEY_ALIAS), "local",
-                config.getCertificateExpirationWarningThreshold(), config.getCertificateExpirationCheckInterval());
+                    config.getCertificateExpirationWarningThreshold(), config.getCertificateExpirationCheckInterval());
             sslContext.init(
-                getKeyManagers(keyStore, KEY_PASSWORD.toCharArray()),
-                new TrustManager[]{trustManager},
-                new SecureRandom());
+                    getKeyManagers(keyStore, KEY_PASSWORD.toCharArray()),
+                    new TrustManager[]{trustManager},
+                    new SecureRandom());
         } catch (Exception e) {
             if (initialized) {
                 // ignore the error so that the next Scheduler execution will retry
@@ -347,7 +331,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
         if (certificateExpirationWarningThreshold != null) {
             delegates.add(new ExpirationCheckTrustManager(certificateExpirationWarningThreshold));
         }
-        
+
         // 2: reject revoked certificates
         if (crl != null) {
             delegates.add(new CRLTrustManager(crl));

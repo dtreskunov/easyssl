@@ -4,16 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
-import javax.servlet.Filter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.server.SslStoreProvider;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -25,6 +24,8 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
 import org.springframework.web.client.RestTemplate;
+
+import jakarta.servlet.Filter;
 
 /**
  * Defines Spring beans that are used for mutual SSL. They are:
@@ -41,6 +42,7 @@ import org.springframework.web.client.RestTemplate;
 public class EasySslBeans {
 
     private static final String PROTOCOL_PROPERTY = "local.server.protocol";
+    private static final String SERVER_SSL_BUNDLE_PROPERTY = "server.ssl.bundle";
 
     @ConditionalOnProperty(value = "easyssl.enabled", matchIfMissing = true)
     public static @interface ConditionalOnEnabled {}
@@ -78,12 +80,16 @@ public class EasySslBeans {
 
     @Bean
     @ConditionalOnServerCustomizationEnabled
-    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> easySslServletContainerCustomizer(EasySslProperties config, EasySslHelper helper, @Autowired(required = false) ServerProperties serverProperties) throws Exception {
-        final SslStoreProvider storeProvider = helper.getSslStoreProvider();
+    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> easySslServletContainerCustomizer(EasySslProperties config,
+                                                                                                      EasySslHelper helper,
+                                                                                                      @Autowired(required = false) ServerProperties serverProperties) throws Exception {
         final Ssl sslProperties = EasySslHelper.getSslProperties(config, serverProperties);
+        
+        // Create a custom SSL bundle using the helper's keystore and truststore
+        SslBundle sslBundle = new EasySslBundleImpl.SslBundleImpl(helper, sslProperties);
 
         return factory -> {
-            factory.setSslStoreProvider(storeProvider);
+            factory.setSslBundles(new EasySslBundleImpl.SslBundlesImpl(sslBundle));
             factory.setSsl(sslProperties);
         };
     }
@@ -101,7 +107,7 @@ public class EasySslBeans {
     public EasySslTomcatCustomizer easySslTomcatCustomizer() throws Exception {
         return new EasySslTomcatCustomizer();
     }
-    
+
     /**
      * Jetty 9.4.15 started doing additional checks on client certificates. This bit of code reverts to the old behavior.
      *
@@ -115,9 +121,10 @@ public class EasySslBeans {
     }
 
     @Autowired
-    public void setProtocolEnvironmentProperty(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
+    public void setEnvironmentProperties(ApplicationContext context, @Autowired(required = false) EasySslProperties config) {
         if (config != null && config.isEnabled() && config.isServerCustomizationEnabled()) {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "https");
+            setEnvironmentProperty(context, SERVER_SSL_BUNDLE_PROPERTY, EasySslBundleImpl.BUNDLE_NAME);
         } else {
             setEnvironmentProperty(context, PROTOCOL_PROPERTY, "http");
         }

@@ -41,16 +41,14 @@ ext {
   isSnapshotVersion = version.endsWith('SNAPSHOT')
   nexusUsername = project.findProperty('nexusUsername') ?: 'secured'
   nexusPassword = project.findProperty('nexusPassword') ?: 'secured'
+  servletContainer = project.getProperties().getOrDefault('servletContainer', 'tomcat')
+  isFips = project.getProperties().getOrDefault('fips', 'true').toBoolean()
 }
 
-// override dependency versions specified in
-// https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.7.18/spring-boot-dependencies-2.7.18.pom
-ext['logback.version'] = '1.2.13'
-ext['spring-framework.version'] = '5.3.39'
-ext['snakeyaml.version'] = '2.0'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+  sourceCompatibility = 17
+  targetCompatibility = 17
+}
 
 repositories {
   mavenCentral()
@@ -59,8 +57,8 @@ repositories {
 // https://www.baeldung.com/spring-boot-override-dependency-versions
 dependencyManagement {
   imports {
-    mavenBom 'org.springframework.boot:spring-boot-dependencies:2.7.18'
-    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.621'
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.5.0'
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.786'
   }
 }
 
@@ -69,9 +67,9 @@ dependencies {
   api('org.springframework.boot:spring-boot-autoconfigure')
   api('org.springframework:spring-web')
   api('org.slf4j:slf4j-api')
-  api('javax.validation:validation-api:2.0.1.Final')
-  api('javax.servlet:javax.servlet-api')
-  api(project.getProperties().getOrDefault('fips', 'true').toBoolean() ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
+  api('jakarta.validation:jakarta.validation-api')
+  api('jakarta.servlet:jakarta.servlet-api')
+  api(isFips ? 'org.bouncycastle:bcpkix-fips:2.1.9' : 'org.bouncycastle:bcpkix-jdk18on:1.81')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
   compileOnly('io.undertow:undertow-core') // needed for undertow-specific customizations
@@ -80,12 +78,12 @@ dependencies {
   testRuntimeOnly('org.springframework.boot:spring-boot-starter-web') {
     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
   }
-  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + project.getProperties().getOrDefault('servletContainer', 'tomcat'))
+  testRuntimeOnly('org.springframework.boot:spring-boot-starter-' + servletContainer)
   testImplementation('org.springframework.boot:spring-boot-starter-security')
   testImplementation('org.springframework.boot:spring-boot-starter-test')
   testImplementation('org.springframework.security:spring-security-test')
-  testImplementation('org.apache.httpcomponents:httpclient')
-  testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
+  testImplementation('org.apache.httpcomponents.client5:httpclient5')
+  testImplementation('org.junit-pioneer:junit-pioneer:2.3.0')
   testImplementation('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
 }
 
@@ -105,7 +103,7 @@ test {
     showStandardStreams = true
   }
   // https://junit-pioneer.org/docs/environment-variables/#warnings-for-reflective-access
-  jvmArgs '--add-opens=java.base/java.util=ALL-UNNAMED'
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.util=ALL-UNNAMED'
 }
 
 //disable javadoc doclint for Java8
@@ -162,6 +160,7 @@ publishing {
       }
     }
   }
+  
   repositories {
     maven {
       def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
@@ -187,6 +186,18 @@ nexusStaging {
   delayBetweenRetriesInMillis = 10000
   username = nexusUsername
   password = nexusPassword
+}
+
+dependencyLocking {
+  lockAllConfigurations()
+  lockMode = LockMode.STRICT
+  lockFile = new File(projectDir, (isFips ? 'fips' : 'nonfips') + '.' + servletContainer + '.lockfile')
+}
+
+configurations {
+  signatures {
+    resolutionStrategy.deactivateDependencyLocking()
+  }
 }
 
 task closeAndReleaseRepositoryIfNeeded(dependsOn: closeAndReleaseRepository) {

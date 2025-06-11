@@ -14,8 +14,13 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
+import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -55,8 +60,18 @@ public class IntegrationTestUsingRealServer {
 
     private RestTemplate restTemplate;
 
-    private RestTemplate getRestTemplate(SSLContext sslContext) throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().setSSLContext(sslContext).build();
+    private RestTemplate getRestTemplate(EasySslHelper easySslHelper) throws Exception {
+        DefaultClientTlsStrategy s = new DefaultClientTlsStrategy(
+            easySslHelper.getSSLContext(),
+            HostnameVerificationPolicy.BOTH,
+            HttpsSupport.getDefaultHostnameVerifier());
+        
+        PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create().setTlsSocketStrategy(s).build();
+
+        HttpClient httpClient = HttpClients.custom()
+            .setConnectionManager(connectionManager)
+            .build();
+
         return new RestTemplateBuilder()
                 .rootUri(protocol + "://localhost:" + port)
                 .requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
@@ -66,7 +81,7 @@ public class IntegrationTestUsingRealServer {
     @BeforeEach
     public void setup() throws Exception {
         assertThat(protocol, is("https"));
-        restTemplate = getRestTemplate(sslContext);
+        restTemplate = getRestTemplate(easySslHelper);
     }
 
     @Test
@@ -91,7 +106,7 @@ public class IntegrationTestUsingRealServer {
             easySslHelper.reinitialize();
 
             X509Certificate[] updatedServerCertificates = ServerCertificateChainGetter.getServerCertificateChain("localhost", port);
-            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost2"));    
+            assertThat("server did not automatically load the updated cert", updatedServerCertificates[0].getSubjectX500Principal().toString(), is("CN=localhost, OU=Localhost2"));
 
             response = restTemplate.getForEntity("/whoami", String.class);
             assertThat(response.getStatusCode(), is(HttpStatus.OK));
@@ -116,7 +131,7 @@ public class IntegrationTestUsingRealServer {
         clientProperties.setCertificate(new ClassPathResource("/ssl/ECEncryptedOpenSsl/cert.pem"));
         clientProperties.setKey(new ClassPathResource("/ssl/ECEncryptedOpenSsl/key.pem"));
         clientProperties.setKeyPassword("ECEncryptedOpenSsl");
-        RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(clientProperties));
+        RestTemplate revokedClientRestTemplate = getRestTemplate(new EasySslHelper(clientProperties));
         ResponseEntity<String> response = revokedClientRestTemplate.getForEntity("/whoami", String.class);
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
         assertThat(response.getBody(), is("CN=ECEncryptedOpenSsl"));
@@ -128,7 +143,7 @@ public class IntegrationTestUsingRealServer {
         clientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/cacerts.pem")));
         clientProperties.setCertificate(new ClassPathResource("/ssl/iss_by_another_ca/cert.pem"));
         clientProperties.setKey(new ClassPathResource("/ssl/iss_by_another_ca/key.pem"));
-        RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(clientProperties));
+        RestTemplate revokedClientRestTemplate = getRestTemplate(new EasySslHelper(clientProperties));
         ResponseEntity<String> response = revokedClientRestTemplate.getForEntity("/whoami", String.class);
         assertThat(response.getStatusCode(), is(HttpStatus.OK));
         assertThat(response.getBody(), is("CN=localhost, OU=iss_by_another_ca"));
@@ -141,10 +156,10 @@ public class IntegrationTestUsingRealServer {
         revokedClientProperties.setCertificate(new ClassPathResource("/ssl/revoked_localhost/cert.pem"));
         revokedClientProperties.setKey(new ClassPathResource("/ssl/revoked_localhost/key.pem"));
         revokedClientProperties.setKeyPassword("localhost-password");
-        RestTemplate revokedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(revokedClientProperties));
+        RestTemplate revokedClientRestTemplate = getRestTemplate(new EasySslHelper(revokedClientProperties));
 
         HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () ->
-            revokedClientRestTemplate.getForEntity("/", String.class));
+                revokedClientRestTemplate.getForEntity("/", String.class));
         assertThat(exception.getMessage(), containsString("403"));
     }
 
@@ -154,7 +169,7 @@ public class IntegrationTestUsingRealServer {
         untrustedClientProperties.setCaCertificate(Arrays.asList(new ClassPathResource("/ssl/ca/cert.pem")));
         untrustedClientProperties.setCertificate(new ClassPathResource("/ssl/fake_localhost1/cert.pem"));
         untrustedClientProperties.setKey(new ClassPathResource("/ssl/fake_localhost1/key.pem"));
-        RestTemplate untrustedClientRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedClientProperties));
+        RestTemplate untrustedClientRestTemplate = getRestTemplate(new EasySslHelper(untrustedClientProperties));
 
         // This appears to work since we have ClientAuth.WANT (not ClientAuth.NEED) and the "/" endpoint is not protected
         //
@@ -164,7 +179,7 @@ public class IntegrationTestUsingRealServer {
         untrustedClientRestTemplate.getForEntity("/", String.class);
 
         HttpClientErrorException exception = assertThrows(HttpClientErrorException.class, () ->
-            untrustedClientRestTemplate.getForEntity("/whoami", String.class));
+                untrustedClientRestTemplate.getForEntity("/whoami", String.class));
         assertThat(exception.getMessage(), containsString("403"));
     }
 
@@ -175,10 +190,10 @@ public class IntegrationTestUsingRealServer {
         untrustedServerProperties.setCertificate(new ClassPathResource("/ssl/localhost1/cert.pem"));
         untrustedServerProperties.setKey(new ClassPathResource("/ssl/localhost1/key.pem"));
         untrustedServerProperties.setKeyPassword("localhost-password");
-        RestTemplate revokedRestTemplate = getRestTemplate(EasySslBeans.getSSLContext(untrustedServerProperties));
+        RestTemplate revokedRestTemplate = getRestTemplate(new EasySslHelper(untrustedServerProperties));
 
         assertThrows(ResourceAccessException.class, () ->
-            revokedRestTemplate.getForEntity("/", String.class));
+                revokedRestTemplate.getForEntity("/", String.class));
     }
 
     private void swapPaths(Path path1, Path path2) throws IOException {
