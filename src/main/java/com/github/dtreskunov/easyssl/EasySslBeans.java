@@ -10,9 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.boot.ssl.SslBundle;
-import org.springframework.boot.ssl.SslBundleRegistry;
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.Ssl;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -86,13 +84,9 @@ public class EasySslBeans {
                                                                                                       EasySslHelper helper,
                                                                                                       @Autowired(required = false) ServerProperties serverProperties) throws Exception {
         final Ssl sslProperties = EasySslHelper.getSslProperties(config, serverProperties);
-        final SslBundleRegistry sslBundleRegistry = new DefaultSslBundleRegistry();
         
         // Create a custom SSL bundle using the helper's keystore and truststore
         SslBundle sslBundle = new EasySslBundleImpl.SslBundleImpl(helper, sslProperties);
-
-        // Register the SSL bundle
-        sslBundleRegistry.registerBundle(EasySslBundleImpl.BUNDLE_NAME, sslBundle);
 
         return factory -> {
             factory.setSslBundles(new EasySslBundleImpl.SslBundlesImpl(sslBundle));
