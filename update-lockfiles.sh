@@ -6,6 +6,8 @@ set -euo pipefail
 
 cd $(dirname $0)
 
+mv *.lockfile /tmp || true
+
 for fips in true false; do
     for servletContainer in jetty tomcat undertow; do
         ./gradlew dependencies -Pfips=$fips -PservletContainer=$servletContainer --write-locks
