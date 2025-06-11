@@ -50,13 +50,6 @@ java {
   targetCompatibility = 17
 }
 
-ext['snakeyaml.version'] = '2.3'
-
-// override dependency versions specified in
-// https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/2.7.18/spring-boot-dependencies-2.7.18.pom
-ext['logback.version'] = '1.5.16'
-ext['spring-framework.version'] = '6.2.3'
-
 repositories {
   mavenCentral()
 }
@@ -65,7 +58,7 @@ repositories {
 dependencyManagement {
   imports {
     mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.3'
-    mavenBom 'software.amazon.awssdk:bom:2.21.33'
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.783'
   }
 }
 
@@ -76,7 +69,7 @@ dependencies {
   api('org.slf4j:slf4j-api')
   api('jakarta.validation:jakarta.validation-api:3.0.2')
   api('jakarta.servlet:jakarta.servlet-api')
-  api('com.amazonaws:aws-java-sdk-secretsmanager:1.12.783')
+  api('com.amazonaws:aws-java-sdk-secretsmanager')
   api(isFips ? 'org.bouncycastle:bcpkix-fips:1.0.5' : 'org.bouncycastle:bcpkix-jdk15on:1.69')
   compileOnly('org.eclipse.jetty:jetty-server') // needed for jetty-specific customizations
   compileOnly('org.apache.tomcat.embed:tomcat-embed-core') // needed for tomcat-specific customizations
@@ -92,16 +85,7 @@ dependencies {
   testImplementation('org.springframework.security:spring-security-test')
   testImplementation('org.apache.httpcomponents.client5:httpclient5')
   testImplementation('org.junit-pioneer:junit-pioneer:1.4.2')
-  testImplementation('com.amazonaws:aws-java-sdk-secretsmanager:1.12.783') // needed for AWS Secrets Manager support
-}
-
-if ('jetty'.equals(servletContainer)) {
-  dependencies {
-    // this shouldn't be needed for Spring Boot 3.2+
-    // https://github.com/spring-projects/spring-boot/issues/33044
-    // https://github.com/spring-projects/spring-boot/issues/31720
-    testRuntimeOnly('org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2')
-  }
+  testImplementation('com.amazonaws:aws-java-sdk-secretsmanager') // needed for AWS Secrets Manager support
 }
 
 task generateTestCerts(type: Exec) {
