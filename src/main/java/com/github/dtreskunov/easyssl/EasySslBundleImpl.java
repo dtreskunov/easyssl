@@ -2,6 +2,7 @@ package com.github.dtreskunov.easyssl;
 
 import java.security.KeyStore;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -171,6 +172,11 @@ final class EasySslBundleImpl {
         @Override
         public List<String> getBundleNames() {
             return List.of(BUNDLE_NAME);
+        }
+        
+        @Override
+        public void addBundleRegisterHandler(BiConsumer<String, SslBundle> registerHandler) {
+            // No dynamic updates in this implementation
         }
     }
 } 
