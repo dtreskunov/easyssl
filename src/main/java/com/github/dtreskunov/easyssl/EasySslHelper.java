@@ -66,7 +66,7 @@ public class EasySslHelper implements ApplicationEventPublisherAware {
 
     /** Java APIs require a password when using a {@link KeyStore}. Hard-coded password is fine since the KeyStore is ephemeral. */
     private static final String KEY_PASSWORD = UUID.randomUUID().toString(); // 122 bits of secure random goodness
-    public static final String KEY_ALIAS = "easyssl-key";
+    static final String KEY_ALIAS = "easyssl-key";
     private static final Pattern PEM_CERTIFICATE = Pattern.compile("-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", Pattern.DOTALL);
 
     public static class SSLContextReinitializedEvent extends ApplicationEvent {
