@@ -57,7 +57,7 @@ repositories {
 // https://www.baeldung.com/spring-boot-override-dependency-versions
 dependencyManagement {
   imports {
-    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.3'
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.6'
     mavenBom 'com.amazonaws:aws-java-sdk-bom:1.12.786'
   }
 }
